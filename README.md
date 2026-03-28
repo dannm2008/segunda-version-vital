@@ -1,4 +1,4 @@
-# Vital Market - Plataforma Web
+# Vital Market - Senda v2
 
 Aplicacion web de gestion y compra para drogueria con:
 
