@@ -71,7 +71,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     let guardadoInventarioPendiente = false;
     let premiumActivo = false;
     let premiumUntil = '';
-    const PREMIUM_BACKEND_URL = localStorage.getItem('premiumBackendUrl') || 'http://localhost:8787';
+    const DEFAULT_PREMIUM_BACKEND_URL = 'https://vital-market-backend.onrender.com';
+    const PREMIUM_BACKEND_URL = (() => {
+        const configuredUrl = localStorage.getItem('premiumBackendUrl');
+        if (configuredUrl) return configuredUrl;
+
+        const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        return isLocalHost ? 'http://localhost:8787' : DEFAULT_PREMIUM_BACKEND_URL;
+    })();
     const INVENTARIO_CACHE_KEY = 'vitalMarketInventarioCache';
     const PEDIDO_SEGUIMIENTO_KEY = 'vitalMarketPedidoSeguimiento';
     const BASE_TRACKING_LAT = 4.682657958446985;
