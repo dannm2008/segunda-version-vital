@@ -1,0 +1,37 @@
+{
+  "inventario": {
+    "$productoId": {
+      "nombre": "string",
+      "stock": 0,
+      "precio": 0,
+      "categoria": "string",
+      "vence": "YYYY-MM-DD"
+    }
+  },
+  "premiumUsers": {
+    "$userId": {
+      "profile": {
+        "active": true,
+        "source": "wompi",
+        "transactionId": "string",
+        "status": "APPROVED",
+        "amountInCents": 1990000,
+        "currency": "COP",
+        "premiumUntil": "2026-04-27T20:00:00.000Z",
+        "updatedAt": "2026-03-27T20:00:00.000Z"
+      },
+      "transactions": {
+        "$transactionId": {
+          "transactionId": "string",
+          "status": "APPROVED",
+          "source": "wompi",
+          "amountInCents": 1990000,
+          "currency": "COP",
+          "paidAt": "2026-03-27T20:00:00.000Z",
+          "createdAt": "2026-03-27T20:00:00.000Z",
+          "premiumUntil": "2026-04-27T20:00:00.000Z"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,161 @@
+/* styles.css - OPTIMIZACIONES PROFESIONALES */
+
+/* ✅ HARDWARE ACCELERATION */
+* {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.section,
+.product-card,
+.transform,
+button {
+    will-change: auto;
+}
+
+/* Animaciones optimizadas */
+.transition-transform {
+    transition: transform 0.2s ease-out;
+}
+
+.hover\:scale-105:hover {
+    transform: scale(1.05);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* ✅ GLOW EFFECTS OPTIMIZADOS */
+.premium-border {
+    border: 2px solid #FFD700;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.6), inset 0 0 5px rgba(255, 215, 0, 0.4);
+    filter: drop-shadow(0 0 2px rgba(255, 215, 0, 0.5));
+}
+
+.neon-glow {
+    text-shadow: 0 0 12px rgba(255, 215, 0, 0.9), 0 0 5px rgba(255, 255, 255, 0.5);
+}
+
+.premium-badge-glow {
+    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.7));
+}
+
+/* ✅ CONTROL DE SECCIONES */
+.section {
+    display: block;
+}
+
+.section.hidden {
+    display: none;
+}
+
+.section.section-active {
+    display: block;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+/* ✅ ANIMACIONES OPTIMIZADAS */
+@keyframes fadeIn {
+    from { 
+        opacity: 0; 
+        transform: translateY(10px); 
+    }
+    to { 
+        opacity: 1; 
+        transform: translateY(0); 
+    }
+}
+
+@keyframes pulse {
+    0% { 
+        box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7); 
+    }
+    70% { 
+        box-shadow: 0 0 0 10px rgba(255, 215, 0, 0); 
+    }
+    100% { 
+        box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); 
+    }
+}
+
+.animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* ✅ SKELETON LOADER */
+.loading-skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+/* ✅ SCROLL OPTIMIZATION */
+html {
+    scroll-behavior: smooth;
+}
+
+/* ✅ FOCUS STYLES ACCESIBLES */
+button:focus-visible,
+input:focus-visible,
+a:focus-visible {
+    outline: 2px solid #003366;
+    outline-offset: 2px;
+}
+
+/* Barra de búsqueda de inicio: sin rayita/borde interno al escribir */
+#home-search {
+    border: 0 !important;
+    border-left: 0 !important;
+    outline: none !important;
+    box-shadow: none !important;
+    background-image: none !important;
+}
+
+#home-search:focus,
+#home-search:focus-visible,
+#home-search:active {
+    border: 0 !important;
+    border-left: 0 !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+/* ✅ MEDIA QUERIES PARA RENDIMIENTO */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ✅ OPTIMIZACIÓN PARA MOBILE */
+@media (max-width: 768px) {
+    .product-card {
+        will-change: opacity;
+    }
+    
+    body {
+        font-size: 16px; /* Evita zoom en input focus */
+    }
+}
+
+/* ✅ DARK MODE SUPPORT (opcional) */
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #1a1a1a;
+        color: #fff;
+    }
+}
+

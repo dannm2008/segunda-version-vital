@@ -1,0 +1,19 @@
+{
+  "rules": {
+    "inventario": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "premiumUsers": {
+      "$userId": {
+        ".read": "auth != null && auth.uid == $userId",
+        "profile": {
+          ".write": "auth != null && auth.uid == $userId"
+        },
+        "transactions": {
+          ".write": "auth != null && auth.uid == $userId"
+        }
+      }
+    }
+  }
+}

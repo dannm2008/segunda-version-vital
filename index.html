@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vital Market - Bosa Brasilia</title>
+    
+    <!-- Tailwind CSS -->
+    <script>
+        (function () {
+            const originalWarn = console.warn;
+            console.warn = function (...args) {
+                const firstArg = String(args[0] || '');
+                if (firstArg.includes('cdn.tailwindcss.com should not be used in production')) {
+                    return;
+                }
+                return originalWarn.apply(console, args);
+            };
+        })();
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js para gráficas -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Export helpers -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+    
+    <!-- Fuentes y estilos -->
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0,1" />
+    
+    <!-- Estilos personalizados -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Manifest para PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="mobile-web-app-capable" content="yes">
+    
+    <style>
+        /* Estilos adicionales para mejorar la interfaz */
+        .product-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .product-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+        }
+        .loading-skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* Base global: azul más oscuro para toda la app */
+        html, body {
+            background:
+                radial-gradient(circle at 10% 8%, rgba(37, 99, 235, 0.2), transparent 34%),
+                radial-gradient(circle at 90% 12%, rgba(30, 64, 175, 0.22), transparent 36%),
+                linear-gradient(180deg, #021b3b 0%, #032a57 45%, #022247 100%);
+        }
+
+        #main-header {
+            background: linear-gradient(180deg, #022a56 0%, #001f45 100%);
+            border-bottom: 1px solid rgba(147, 197, 253, 0.22);
+        }
+
+        /* Básico: destellos muy pequeños y suaves */
+        @keyframes basicTinySparkle {
+            0%, 100% { opacity: 0.2; transform: translateY(0px) scale(1); }
+            50% { opacity: 0.55; transform: translateY(-4px) scale(1.06); }
+        }
+
+        body:not(.premium-theme)::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 2;
+            background-image:
+                radial-gradient(circle at 12% 18%, rgba(191, 219, 254, 0.35) 0 1px, transparent 1.5px),
+                radial-gradient(circle at 82% 26%, rgba(147, 197, 253, 0.3) 0 1px, transparent 1.5px),
+                radial-gradient(circle at 24% 74%, rgba(191, 219, 254, 0.28) 0 1px, transparent 1.5px),
+                radial-gradient(circle at 74% 78%, rgba(147, 197, 253, 0.3) 0 1px, transparent 1.5px);
+            animation: basicTinySparkle 4.4s ease-in-out infinite;
+        }
+
+        body:not(.premium-theme)::after {
+            content: '✦ · ✦ ·';
+            position: fixed;
+            top: 18px;
+            right: 18px;
+            font-size: 10px;
+            letter-spacing: 4px;
+            color: rgba(191, 219, 254, 0.75);
+            text-shadow: 0 0 6px rgba(147, 197, 253, 0.42);
+            pointer-events: none;
+            z-index: 65;
+            animation: basicTinySparkle 3.4s ease-in-out infinite;
+        }
+
+        body:not(.premium-theme) .bg-white {
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            box-shadow: 0 6px 16px rgba(2, 23, 56, 0.24);
+        }
+
+        /* Tema Premium - Dorado brillante */
+        @keyframes premiumShineSweep {
+            0% { transform: translateX(-120%); opacity: 0; }
+            25% { opacity: 0.82; }
+            50% { transform: translateX(120%); opacity: 0; }
+            100% { transform: translateX(120%); opacity: 0; }
+        }
+
+        @keyframes premiumGlowPulse {
+            0%, 100% { box-shadow: 0 12px 30px rgba(255, 200, 45, 0.3), 0 3px 10px rgba(0, 0, 0, 0.18); }
+            50% { box-shadow: 0 18px 42px rgba(255, 200, 45, 0.52), 0 6px 16px rgba(0, 0, 0, 0.22); }
+        }
+
+        @keyframes sparkleTwinkle {
+            0%, 100% { opacity: 0.25; transform: scale(0.9); }
+            50% { opacity: 1; transform: scale(1.25); }
+        }
+
+        body.premium-theme {
+            background:
+                radial-gradient(circle at 12% 10%, rgba(255, 230, 140, 0.26), transparent 40%),
+                radial-gradient(circle at 86% 18%, rgba(255, 208, 70, 0.28), transparent 34%),
+                linear-gradient(180deg, #fffdf4 0%, #fff6db 100%);
+        }
+
+        body.premium-theme #main-header {
+            position: sticky;
+            overflow: hidden;
+            box-shadow: 0 12px 30px rgba(255, 195, 20, 0.52), 0 3px 14px rgba(0, 0, 0, 0.24);
+            border-bottom: 1px solid rgba(255, 217, 102, 0.45);
+            animation: premiumGlowPulse 2.6s ease-in-out infinite;
+        }
+
+        body.premium-theme #main-header::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 42%;
+            height: 100%;
+            pointer-events: none;
+            background: linear-gradient(110deg, transparent 10%, rgba(255, 240, 180, 0.56) 50%, transparent 90%);
+            animation: premiumShineSweep 3.2s linear infinite;
+        }
+
+        body.premium-theme #header-premium-badge {
+            position: relative;
+            box-shadow: 0 0 0 1px rgba(255, 213, 79, 0.7), 0 0 16px rgba(255, 213, 79, 1), 0 0 30px rgba(255, 190, 20, 0.62);
+            text-shadow: 0 0 12px rgba(255, 255, 255, 0.84);
+        }
+
+        body.premium-theme #header-premium-badge::before,
+        body.premium-theme #header-premium-badge::after {
+            content: '✦';
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 12px;
+            color: rgba(255, 236, 165, 0.95);
+            animation: sparkleTwinkle 1.8s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        body.premium-theme #header-premium-badge::before {
+            left: -10px;
+        }
+
+        body.premium-theme #header-premium-badge::after {
+            right: -10px;
+            animation-delay: 0.75s;
+        }
+
+        body.premium-theme button.bg-accent {
+            box-shadow: 0 0 0 1px rgba(255, 216, 107, 0.7), 0 0 18px rgba(255, 209, 64, 0.55);
+        }
+
+        body.premium-theme button.bg-accent:hover {
+            box-shadow: 0 0 0 1px rgba(255, 216, 107, 0.9), 0 0 28px rgba(255, 209, 64, 0.78);
+            transform: translateY(-1px);
+        }
+
+        body.premium-theme .bg-white {
+            box-shadow: 0 7px 22px rgba(255, 205, 64, 0.22), 0 3px 10px rgba(0, 0, 0, 0.1);
+            border-color: rgba(255, 214, 102, 0.45);
+        }
+
+        @keyframes premiumButtonShimmer {
+            0% { transform: translateX(-130%); opacity: 0; }
+            35% { opacity: 0.7; }
+            60% { transform: translateX(130%); opacity: 0; }
+            100% { transform: translateX(130%); opacity: 0; }
+        }
+
+        @keyframes premiumButtonGlow {
+            0%, 100% { box-shadow: 0 0 0 1px rgba(255, 214, 102, 0.7), 0 0 22px rgba(255, 196, 28, 0.48); }
+            50% { box-shadow: 0 0 0 1px rgba(255, 214, 102, 1), 0 0 34px rgba(255, 196, 28, 0.75); }
+        }
+
+        @keyframes premiumCardSparkle {
+            0%, 100% { transform: translateY(0); filter: drop-shadow(0 0 0 rgba(255, 218, 120, 0)); }
+            50% { transform: translateY(-1px); filter: drop-shadow(0 0 8px rgba(255, 218, 120, 0.5)); }
+        }
+
+        @keyframes basicBuyPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(0, 51, 102, 0.0); transform: translateY(0); }
+            50% { box-shadow: 0 0 0 8px rgba(0, 76, 153, 0.2); transform: translateY(-1px); }
+        }
+
+        /* Premium: casi todo con brillitos */
+        body.premium-theme .bg-white {
+            position: relative;
+            overflow: hidden;
+            animation: premiumCardSparkle 5.2s ease-in-out infinite;
+        }
+
+        body.premium-theme .bg-white::after {
+            content: '✦';
+            position: absolute;
+            top: 10px;
+            right: 12px;
+            font-size: 10px;
+            color: rgba(255, 232, 173, 0.9);
+            text-shadow: 0 0 6px rgba(255, 210, 72, 0.65);
+            animation: sparkleTwinkle 1.8s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        body.premium-theme button {
+            position: relative;
+            overflow: hidden;
+            animation: premiumButtonGlow 3.8s ease-in-out infinite;
+        }
+
+        body.premium-theme button::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 38%;
+            height: 100%;
+            background: linear-gradient(110deg, transparent 10%, rgba(255, 248, 212, 0.75) 50%, transparent 90%);
+            animation: premiumButtonShimmer 4.2s linear infinite;
+            pointer-events: none;
+        }
+
+        /* VIP FULL: brillo global y destellos animados */
+        @keyframes vipAuraRotate {
+            0% { transform: rotate(0deg) scale(1); }
+            100% { transform: rotate(360deg) scale(1.08); }
+        }
+
+        @keyframes vipTwinkleDrift {
+            0% { transform: translateY(0px) translateX(0px); opacity: 0.45; }
+            50% { transform: translateY(-9px) translateX(6px); opacity: 1; }
+            100% { transform: translateY(0px) translateX(0px); opacity: 0.45; }
+        }
+
+        @keyframes vipCardFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+
+        @keyframes vipCardShine {
+            0% { transform: translateX(-135%); opacity: 0; }
+            30% { opacity: 0.8; }
+            55% { transform: translateX(135%); opacity: 0; }
+            100% { transform: translateX(135%); opacity: 0; }
+        }
+
+        body.premium-theme::before {
+            content: '';
+            position: fixed;
+            inset: -28% -22%;
+            z-index: 0;
+            pointer-events: none;
+            background:
+                radial-gradient(circle at 15% 18%, rgba(255, 218, 88, 0.32), transparent 28%),
+                radial-gradient(circle at 85% 20%, rgba(255, 194, 52, 0.3), transparent 26%),
+                radial-gradient(circle at 50% 85%, rgba(255, 232, 166, 0.22), transparent 30%),
+                radial-gradient(circle at 62% 36%, rgba(255, 211, 84, 0.2), transparent 24%);
+            animation: vipAuraRotate 20s linear infinite;
+            filter: blur(2px);
+        }
+
+        body.premium-theme::after {
+            content: '✦ ✧ ✦ ✧ ✦';
+            position: fixed;
+            top: 18px;
+            right: 28px;
+            z-index: 55;
+            pointer-events: none;
+            color: rgba(255, 233, 160, 1);
+            text-shadow: 0 0 12px rgba(255, 205, 64, 0.92), 0 0 22px rgba(255, 180, 22, 0.58);
+            letter-spacing: 8px;
+            animation: vipTwinkleDrift 2.2s ease-in-out infinite;
+            font-size: 13px;
+        }
+
+        body.premium-theme .relative,
+        body.premium-theme #main-header,
+        body.premium-theme main {
+            position: relative;
+            z-index: 1;
+        }
+
+        body.premium-theme .bg-white {
+            animation: premiumCardSparkle 5.2s ease-in-out infinite, vipCardFloat 7.2s ease-in-out infinite;
+            box-shadow: 0 12px 30px rgba(255, 200, 42, 0.32), 0 4px 16px rgba(0, 0, 0, 0.14);
+        }
+
+        body.premium-theme .bg-white::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 36%;
+            height: 100%;
+            background: linear-gradient(110deg, transparent 12%, rgba(255, 245, 200, 0.74) 50%, transparent 88%);
+            animation: vipCardShine 3.4s linear infinite;
+            pointer-events: none;
+        }
+
+        body.premium-theme button {
+            animation: premiumButtonGlow 2.2s ease-in-out infinite;
+            box-shadow: 0 0 0 1px rgba(255, 221, 130, 0.74), 0 0 22px rgba(255, 189, 21, 0.46);
+        }
+
+        body.premium-theme button:hover {
+            transform: translateY(-1px) scale(1.01);
+            box-shadow: 0 0 0 1px rgba(255, 222, 136, 0.94), 0 0 32px rgba(255, 189, 21, 0.7);
+        }
+
+        /* Retoques suaves globales (no invasivos) */
+        #main-header {
+            background: linear-gradient(180deg, #033e77 0%, #003366 100%);
+        }
+
+        :root {
+            --ui-surface: #ffffff;
+            --ui-border: rgba(148, 163, 184, 0.24);
+            --ui-shadow: 0 10px 24px rgba(2, 23, 56, 0.2);
+            --ui-shadow-soft: 0 6px 16px rgba(2, 23, 56, 0.16);
+        }
+
+        .bg-white {
+            border-radius: 1rem;
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            box-shadow: var(--ui-shadow-soft);
+            backdrop-filter: blur(1.5px);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+
+        .bg-white:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--ui-shadow);
+            border-color: rgba(96, 165, 250, 0.34);
+        }
+
+        button {
+            min-height: 40px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            letter-spacing: 0.01em;
+            transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            filter: brightness(1.03);
+        }
+
+        button:active {
+            transform: translateY(0px) scale(0.99);
+        }
+
+        button:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+            filter: saturate(0.72);
+        }
+
+        body:not(.premium-theme) button.bg-primary {
+            background: linear-gradient(180deg, #0b6dd0 0%, #004f9c 100%);
+            box-shadow: 0 12px 26px rgba(0, 80, 170, 0.42), 0 3px 9px rgba(0, 0, 0, 0.2);
+            border-color: rgba(147, 197, 253, 0.42);
+            text-shadow: 0 1px 1px rgba(0, 0, 0, 0.22);
+        }
+
+        body:not(.premium-theme) button.bg-primary:hover {
+            box-shadow: 0 16px 34px rgba(0, 80, 170, 0.55), 0 6px 14px rgba(0, 0, 0, 0.22);
+        }
+
+        body:not(.premium-theme) button.bg-accent {
+            background: linear-gradient(180deg, #ffe763 0%, #ffc928 100%);
+            box-shadow: 0 10px 24px rgba(255, 192, 0, 0.4);
+            border-color: rgba(255, 214, 102, 0.62);
+            text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+        }
+
+        body:not(.premium-theme) #main-header {
+            background: linear-gradient(180deg, #0a4f94 0%, #00366c 100%);
+            box-shadow: 0 8px 22px rgba(0, 46, 95, 0.44);
+        }
+
+        body:not(.premium-theme) .bg-white {
+            border-color: rgba(96, 165, 250, 0.28);
+            box-shadow: 0 10px 24px rgba(2, 23, 56, 0.28);
+        }
+
+        input,
+        select,
+        textarea {
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 0.7rem;
+            border-width: 1.5px;
+            border-color: rgba(148, 163, 184, 0.44);
+            transition: border-color 0.18s ease, box-shadow 0.18s ease;
+        }
+
+        input::placeholder,
+        textarea::placeholder {
+            color: rgba(71, 85, 105, 0.75);
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: rgba(37, 99, 235, 0.62);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16), 0 8px 18px rgba(37, 99, 235, 0.14);
+            outline: none;
+        }
+
+        /* Barra inferior más nítida y visible */
+        nav {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(241, 245, 249, 0.96) 100%);
+            border-top: 1px solid rgba(148, 163, 184, 0.34);
+            box-shadow: 0 -6px 24px rgba(2, 23, 56, 0.18);
+        }
+
+        .nav-btn {
+            border-radius: 0.95rem;
+            padding-top: 0.34rem;
+            padding-bottom: 0.34rem;
+            transition: background-color 0.2s ease, transform 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-1px);
+            background: rgba(148, 163, 184, 0.12);
+        }
+
+        .nav-btn.text-primary {
+            background: linear-gradient(180deg, rgba(191, 219, 254, 0.72) 0%, rgba(219, 234, 254, 0.72) 100%);
+            box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.28), 0 6px 14px rgba(30, 64, 175, 0.24);
+        }
+
+        /* Modales con mejor contraste visual */
+        .fixed.inset-0.bg-black\/50 {
+            backdrop-filter: blur(2.5px);
+            background: rgba(2, 6, 23, 0.58);
+        }
+
+        /* Panel VIP: brillo dedicado para dashboard y controles */
+        @keyframes panelVipShine {
+            0% { transform: translateX(-140%); opacity: 0; }
+            35% { opacity: 0.55; }
+            55% { transform: translateX(140%); opacity: 0; }
+            100% { transform: translateX(140%); opacity: 0; }
+        }
+
+        @keyframes panelVipPulse {
+            0%, 100% { box-shadow: 0 0 0 1px rgba(255, 212, 95, 0.45), 0 8px 18px rgba(255, 194, 39, 0.18); }
+            50% { box-shadow: 0 0 0 1px rgba(255, 212, 95, 0.78), 0 12px 30px rgba(255, 194, 39, 0.34); }
+        }
+
+        body.premium-theme #section-panel {
+            background:
+                radial-gradient(circle at 8% 5%, rgba(255, 224, 123, 0.2), transparent 32%),
+                radial-gradient(circle at 92% 8%, rgba(255, 198, 70, 0.18), transparent 36%);
+        }
+
+        body.premium-theme #section-panel .bg-white,
+        body.premium-theme #section-panel .bg-red-50,
+        body.premium-theme #section-panel .bg-amber-50,
+        body.premium-theme #section-panel .bg-slate-800,
+        body.premium-theme #section-panel .bg-yellow-500,
+        body.premium-theme #section-panel .bg-primary {
+            position: relative;
+            overflow: hidden;
+            animation: panelVipPulse 2.8s ease-in-out infinite;
+        }
+
+        body.premium-theme #section-panel .bg-white::before,
+        body.premium-theme #section-panel .bg-red-50::before,
+        body.premium-theme #section-panel .bg-amber-50::before,
+        body.premium-theme #section-panel .bg-slate-800::before,
+        body.premium-theme #section-panel .bg-yellow-500::before,
+        body.premium-theme #section-panel .bg-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 34%;
+            height: 100%;
+            background: linear-gradient(110deg, transparent 12%, rgba(255, 245, 200, 0.62) 50%, transparent 88%);
+            animation: panelVipShine 3.1s linear infinite;
+            pointer-events: none;
+        }
+
+        body.premium-theme #section-panel button {
+            box-shadow: 0 0 0 1px rgba(255, 214, 103, 0.65), 0 0 24px rgba(255, 196, 28, 0.45);
+        }
+
+        body.premium-theme #section-panel button:hover {
+            box-shadow: 0 0 0 1px rgba(255, 214, 103, 0.9), 0 0 34px rgba(255, 196, 28, 0.7);
+        }
+
+        body.premium-theme #section-panel h1,
+        body.premium-theme #section-panel h2,
+        body.premium-theme #section-panel h3,
+        body.premium-theme #section-panel .font-black {
+            text-shadow: 0 0 8px rgba(255, 214, 103, 0.35);
+        }
+
+        /* Plan básico: solo una animación suave en comprar y pocos botones */
+        body:not(.premium-theme) #comprar-ahora-btn,
+        body:not(.premium-theme) #checkout-btn,
+        body:not(.premium-theme) #upgrade-premium-btn {
+            animation: basicBuyPulse 2.7s ease-in-out infinite;
+        }
+
+        /* Campana de notificaciones con brillo */
+        @keyframes bellGlowPulse {
+            0%, 100% { box-shadow: 0 0 0 rgba(255, 215, 0, 0.0), inset 0 0 0 rgba(255, 215, 0, 0.0); }
+            50% { box-shadow: 0 0 14px rgba(255, 215, 0, 0.45), inset 0 0 10px rgba(255, 215, 0, 0.18); }
+        }
+
+        @keyframes bellBadgePing {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+
+        .notif-bell-glow {
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
+        }
+
+        .notif-bell-glow.notif-has-unread {
+            animation: bellGlowPulse 1.8s ease-in-out infinite;
+            border-color: rgba(255, 215, 0, 0.85);
+        }
+
+        #notificaciones-badge {
+            animation: bellBadgePing 1.2s ease-in-out infinite;
+        }
+    </style>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { 
+                        "primary": "#003366", 
+                        "accent": "#FFD700" 
+                    },
+                    fontFamily: { 
+                        "display": ["Sora", "sans-serif"] 
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background-light font-display text-slate-900">
+
+<div class="relative flex min-h-screen w-full flex-col">
+
+    <!-- HEADER -->
+    <header id="main-header" class="bg-primary p-4 sticky top-0 z-50 shadow-md">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="relative flex h-12 w-12 items-center justify-center rounded-full bg-white premium-border">
+                    <span class="material-symbols-outlined text-primary text-3xl">search</span>
+                    <div class="absolute -bottom-1 -right-1 bg-accent rounded-full p-1 border-2 border-primary">
+                        <span class="material-symbols-outlined text-primary text-xs">location_on</span>
+                    </div>
+                </div>
+                <div>
+                    <h2 class="text-white text-xl font-bold">Vital Market</h2>
+                    <span id="header-premium-badge" class="bg-slate-400 text-white text-[10px] font-black px-2 py-0.5 rounded-full">PLAN BASICO</span>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button id="btn-cliente-sesion" class="bg-white text-primary px-3 py-2 rounded-xl font-bold text-xs border border-white/30 shadow-md flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-base">person</span>
+                    <span id="btn-cliente-sesion-text">Iniciar sesion</span>
+                </button>
+                <button id="btn-notificaciones" class="notif-bell-glow text-accent p-2 rounded-full border border-accent/30 relative">
+                    <span class="material-symbols-outlined">notifications_active</span>
+                    <span id="notificaciones-badge" class="hidden absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MODAL: NOTIFICACIONES -->
+    <div id="modal-notificaciones" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full max-h-[80vh] overflow-y-auto shadow-xl border border-slate-200">
+            <div class="bg-primary text-white p-4 rounded-t-2xl flex items-center justify-between sticky top-0">
+                <h2 class="text-xl font-bold flex items-center gap-2">
+                    <span class="material-symbols-outlined">notifications_active</span>
+                    Notificaciones
+                </h2>
+                <button id="cerrar-modal-notificaciones" class="text-white">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div class="p-4 space-y-3">
+                <div id="notificaciones-vacio" class="text-center py-8 text-slate-500">
+                    <span class="material-symbols-outlined text-5xl text-slate-300">notifications</span>
+                    <p class="mt-3 font-semibold">No hay notificaciones</p>
+                </div>
+                <div id="notificaciones-lista" class="hidden space-y-3"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="flex-1">
+        <!-- SECCIÓN: INICIO -->
+        <section id="section-home" class="section section-active pb-24">
+            <div class="px-4 py-4 bg-primary rounded-b-[2rem] shadow-lg">
+                <label class="flex w-full items-stretch rounded-xl h-14 bg-white shadow-inner">
+                    <span class="material-symbols-outlined text-primary flex items-center pl-4">search</span>
+                    <input id="home-search" class="w-full border-none bg-transparent focus:ring-0 px-4" placeholder="Buscar medicamentos...">
+                </label>
+            </div>
+
+            <div class="p-4 mt-2">
+                <div class="flex flex-col gap-4 rounded-2xl border-2 border-accent bg-white p-5 shadow-lg relative">
+                    <div class="absolute top-0 right-0 bg-accent text-primary text-[10px] font-bold px-3 py-1 rounded-bl-lg">URGENTE</div>
+                    <div class="flex gap-4">
+                        <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-accent/20"><span class="material-symbols-outlined text-primary text-3xl">pill</span></div>
+                        <p class="text-slate-700 font-semibold">Llegó stock de tu <span class="text-primary underline">Amoxicilina</span> recurrente</p>
+                    </div>
+                    <button id="comprar-ahora-btn" class="w-full rounded-xl h-14 bg-primary text-white font-black shadow-lg flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined">shopping_cart</span>COMPRAR AHORA
+                    </button>
+                </div>
+            </div>
+
+            <div class="px-4 py-2">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-primary font-bold flex items-center gap-2"><span class="material-symbols-outlined">medication</span>Mi Botiquín</h3>
+                    <a href="#" id="view-all-cabinet" class="text-primary font-bold text-sm underline">Ver Todo</a>
+                </div>
+                <div id="quick-products" class="grid grid-cols-2 gap-3">
+                    <!-- Productos rápidos cargados dinámicamente -->
+                </div>
+                <div id="premium-benefits" class="mt-4 hidden">
+                    <div class="bg-gradient-to-r from-yellow-50 to-amber-50 border border-accent rounded-xl p-4">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="material-symbols-outlined text-accent">workspace_premium</span>
+                            <h4 class="font-bold text-primary">Beneficios Premium</h4>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 text-sm">
+                            <div class="flex items-center gap-1"><span class="material-symbols-outlined text-green-600 text-base">check_circle</span><span>Envío gratis</span></div>
+                            <div class="flex items-center gap-1"><span class="material-symbols-outlined text-green-600 text-base">check_circle</span><span>5% descuento</span></div>
+                            <div class="flex items-center gap-1"><span class="material-symbols-outlined text-green-600 text-base">check_circle</span><span>Prioridad</span></div>
+                            <div class="flex items-center gap-1"><span class="material-symbols-outlined text-green-600 text-base">check_circle</span><span>Soporte 24/7</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div id="basic-benefits" class="mt-4">
+                    <div class="bg-gradient-to-r from-gray-50 to-slate-50 border border-slate-200 rounded-xl p-4">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="material-symbols-outlined text-slate-400">person</span>
+                            <h4 class="font-bold text-slate-600">Plan Básico</h4>
+                        </div>
+                        <p class="text-xs text-slate-500 mb-2">Actualiza a Premium para obtener:</p>
+                        <div class="grid grid-cols-2 gap-2 text-sm text-slate-400">
+                            <div class="flex items-center gap-1"><span class="material-symbols-outlined text-base">close</span><span>Envío gratis</span></div>
+                            <div class="flex items-center gap-1"><span class="material-symbols-outlined text-base">close</span><span>5% descuento</span></div>
+                            <div class="flex items-center gap-1"><span class="material-symbols-outlined text-base">close</span><span>Prioridad</span></div>
+                            <div class="flex items-center gap-1"><span class="material-symbols-outlined text-base">close</span><span>Soporte 24/7</span></div>
+                        </div>
+                        <button id="upgrade-premium-btn" class="w-full mt-3 bg-primary text-white py-2 rounded-xl text-sm font-bold">Actualizar a Premium</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-4">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-primary font-bold flex items-center gap-2"><span class="material-symbols-outlined">map</span>Farmacias Cercanas</h3>
+                    <span class="text-xs font-bold bg-primary text-white px-2 py-1 rounded">EN VIVO</span>
+                </div>
+                <div class="rounded-2xl overflow-hidden border-2 border-slate-200 shadow-lg bg-white">
+                    <iframe
+                        title="Mapa en vivo Bosa Brasilia"
+                        src="https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d4728.883131218866!2d-74.05669582712905!3d4.682657958446985!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1ses-419!2sco!4v1772594930094!5m2!1ses-419!2sco"
+                        width="100%"
+                        height="240"
+                        style="border:0;"
+                        allowfullscreen=""
+                        loading="lazy"
+                        referrerpolicy="no-referrer-when-downgrade">
+                    </iframe>
+                    <div class="px-3 py-2 text-xs text-slate-600 border-t border-slate-100">
+                        Bosa Brasilia, Bogota. Puedes mover y ampliar el mapa.
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- SECCIÓN: MI BOTIQUÍN -->
+        <section id="section-botiquin" class="section hidden pb-24">
+            <div class="bg-primary p-4 sticky top-0 z-40">
+                <div class="flex justify-between items-center">
+                    <h1 class="text-white text-2xl font-bold">Mi Botiquín</h1>
+                    <button id="ver-carrito-btn" class="bg-accent text-primary px-4 py-2 rounded-xl font-bold flex items-center gap-2 relative">
+                        <span class="material-symbols-outlined">shopping_cart</span>
+                        <span id="carrito-contador" class="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center absolute -top-1 -right-1">0</span>
+                    </button>
+                </div>
+
+            <div class="px-4 py-2 flex justify-between items-center">
+                <p class="text-lg font-bold text-accent"><span id="productos-visibles">10</span> productos disponibles</p>
+                <select id="ordenar-productos" class="text-xs border rounded-lg p-1">
+                    <option value="nombre">Ordenar por nombre</option>
+                    <option value="precio-menor">Menor precio</option>
+                    <option value="precio-mayor">Mayor precio</option>
+                </select>
+            </div>
+
+            <div class="p-4 grid grid-cols-2 gap-3" id="lista-productos">
+                <!-- Productos cargados dinámicamente -->
+            </div>
+
+            <!-- Modales del carrito -->
+            <div id="modal-carrito" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                <div class="bg-white rounded-2xl max-w-md w-full max-h-[80vh] overflow-y-auto">
+                    <div class="bg-primary text-white p-4 rounded-t-2xl flex justify-between items-center sticky top-0">
+                        <h2 class="text-xl font-bold flex items-center gap-2"><span class="material-symbols-outlined">shopping_cart</span>Tu Carrito</h2>
+                        <button id="cerrar-carrito" class="text-white"><span class="material-symbols-outlined">close</span></button>
+                    </div>
+                    <div class="p-4" id="carrito-contenido">
+                        <div id="carrito-vacio" class="text-center py-8 text-slate-500">
+                            <span class="material-symbols-outlined text-6xl">shopping_cart</span>
+                            <p class="mt-2">Tu carrito está vacío</p>
+                        </div>
+                        <div id="carrito-items" class="hidden space-y-3"></div>
+                        <div id="carrito-total-container" class="hidden mt-6 pt-4 border-t border-slate-200">
+                            <div class="mb-4 bg-slate-50 border border-slate-200 rounded-xl p-3">
+                                <p class="text-xs font-bold text-slate-600 uppercase mb-2">Datos de entrega</p>
+                                <div class="grid grid-cols-1 gap-2">
+                                    <input id="entrega-nombre" type="text" placeholder="Nombre de quien recibe" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                                    <input id="entrega-correo" type="email" placeholder="Correo de contacto" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                                    <input id="entrega-direccion" type="text" placeholder="Direccion exacta de entrega" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                                    <input id="entrega-barrio" type="text" placeholder="Barrio / parte donde vive" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                                </div>
+                                <p class="text-[11px] text-slate-500 mt-2">Estos datos ayudan a identificar a quien y donde se entrega el pedido. El inicio de sesion de drogueria va aparte.</p>
+                            </div>
+                            <div class="flex justify-between items-center mb-4">
+                                <span class="font-bold text-lg">Total:</span>
+                                <span id="carrito-total" class="text-2xl font-black text-primary">$0</span>
+                            </div>
+                            <button id="checkout-btn" class="w-full bg-primary text-white py-3 rounded-xl font-bold text-lg shadow-md">Confirmar Pedido</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="modal-pedido" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                <div class="bg-white rounded-2xl max-w-md w-full p-6 text-center">
+                    <span class="material-symbols-outlined text-6xl text-green-500 mb-4">check_circle</span>
+                    <h2 class="text-2xl font-bold mb-2">¡Pedido Confirmado!</h2>
+                    <p class="text-slate-600 mb-6">Tu pedido ha sido enviado a la farmacia</p>
+                    <div class="bg-slate-50 p-4 rounded-xl mb-6 text-left" id="pedido-resumen"></div>
+                    <button id="ver-seguimiento-pedido" class="w-full bg-accent text-primary py-2 rounded-xl font-bold mb-2">Ver seguimiento</button>
+                    <button id="cerrar-pedido" class="w-full bg-primary text-white py-3 rounded-xl font-bold">Seguir Comprando</button>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- SECCIÓN: MAPA -->
+        <section id="section-mapa" class="section hidden pb-24">
+            <div class="bg-primary p-4 sticky top-0 z-40">
+                <div class="flex items-center justify-between gap-3">
+                    <h1 class="text-white text-2xl font-bold flex items-center gap-2">
+                        <span class="material-symbols-outlined">local_shipping</span>
+                        Seguimiento producto
+                    </h1>
+                    <button id="btn-abrir-historial-compras" class="bg-white/20 text-white px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 border border-white/30">
+                        <span class="material-symbols-outlined text-base">receipt_long</span>
+                        Historial compras
+                    </button>
+                </div>
+            </div>
+
+            <div class="p-4 space-y-4">
+                <!-- CONTENEDOR DINAMICO DE PEDIDOS ACTIVOS -->
+                <div id="contenedor-pedidos-activos" class="space-y-4">
+                    <!-- Los pedidos se insertan aquí dinámicamente -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
+                        <p class="text-sm text-slate-700">Cargando pedidos...</p>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- MODAL: HISTORIAL DE COMPRAS -->
+        <div id="modal-historial-compras" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[82vh] overflow-y-auto shadow-xl border border-slate-200">
+                <div class="bg-primary text-white p-4 rounded-t-2xl flex items-center justify-between sticky top-0">
+                    <h2 class="text-xl font-bold flex items-center gap-2">
+                        <span class="material-symbols-outlined">receipt_long</span>
+                        Historial compras
+                    </h2>
+                    <button id="cerrar-historial-compras" class="text-white">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+                <div class="p-4 space-y-3">
+                    <div id="mis-compras-vacio" class="text-center py-8 text-slate-500">
+                        <span class="material-symbols-outlined text-5xl text-slate-300">receipt_long</span>
+                        <p class="mt-3 font-semibold">No tienes compras aun</p>
+                        <p class="text-xs mt-1">Tus ordenes anteriores apareceran aqui</p>
+                    </div>
+                    <div id="mis-compras-lista" class="hidden space-y-3">
+                        <!-- Compras cargadas dinámicamente -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN: PANEL DE CONTROL -->
+        <section id="section-panel" class="section hidden pb-24">
+            <div class="bg-primary p-4 sticky top-0 z-40">
+                <div class="flex justify-between items-center">
+                    <h1 class="text-white text-2xl font-bold">Panel de Control</h1>
+                    <div class="flex gap-2">
+                        <button id="btn-panel-logout" class="bg-white/20 text-white px-3 py-2 rounded-xl font-bold flex items-center gap-1 text-sm border border-white/30">
+                            <span class="material-symbols-outlined">lock_open</span> Salir
+                        </button>
+                        <button id="btn-imprimir" class="bg-accent text-primary px-3 py-2 rounded-xl font-bold flex items-center gap-1 text-sm">
+                            <span class="material-symbols-outlined">print</span> Imprimir
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-4">
+                <!-- Acciones rápidas (arriba) -->
+                <div class="grid grid-cols-1 gap-3 mb-4">
+                    <button id="btn-reset-db-top" class="flex items-center justify-center gap-2 bg-slate-800 text-white py-3 rounded-xl font-bold shadow-md hover:bg-slate-700 transition-all">
+                        <span class="material-symbols-outlined">restart_alt</span> Restablecer
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+                    <button id="btn-sync-inventario-top" class="w-full flex items-center justify-center gap-2 bg-primary text-white py-3 rounded-xl font-bold shadow-md hover:bg-[#004488] transition-all">
+                        <span class="material-symbols-outlined">sync</span> Sincronizar ahora
+                    </button>
+                    <button id="btn-test-firebase-top" class="w-full flex items-center justify-center gap-2 bg-yellow-500 text-white py-3 rounded-xl font-bold shadow-md hover:bg-yellow-600 transition-all">
+                        <span class="material-symbols-outlined">search</span> TEST: Ver datos de Firebase
+                    </button>
+                </div>
+
+                <!-- Tarjetas de estadísticas -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                    <div class="flex-1 bg-white p-4 rounded-xl border-b-4 border-primary shadow-sm">
+                        <p class="text-slate-500 text-xs font-bold uppercase tracking-wider">PRODUCTOS TOTALES</p>
+                        <p id="dashboard-total" class="text-primary text-4xl font-black mt-1">159</p>
+                        <p class="text-xs text-slate-400 mt-1">en inventario</p>
+                    </div>
+                    <div class="flex-1 bg-red-50 p-4 rounded-xl border-b-4 border-red-500 shadow-sm relative overflow-hidden">
+                        <div class="absolute -right-2 -top-2 opacity-10">
+                            <span class="material-symbols-outlined text-6xl text-red-500">warning</span>
+                        </div>
+                        <p class="text-red-500 text-xs font-bold uppercase tracking-wider">BAJAS EXISTENCIAS</p>
+                        <p id="dashboard-low-stock" class="text-red-600 text-4xl font-black mt-1">00</p>
+                        <p class="text-xs text-red-400 mt-1">productos críticos</p>
+                        <button id="btn-ver-criticos" class="mt-2 text-[11px] font-bold text-red-600 bg-white/80 border border-red-200 rounded-full px-2 py-1 hover:bg-white">Ver nombres</button>
+                    </div>
+                    <div class="flex-1 bg-amber-50 p-4 rounded-xl border-b-4 border-amber-500 shadow-sm relative overflow-hidden">
+                        <div class="absolute -right-2 -top-2 opacity-10">
+                            <span class="material-symbols-outlined text-6xl text-amber-500">schedule</span>
+                        </div>
+                        <p class="text-amber-700 text-xs font-bold uppercase tracking-wider">VENCIMIENTO DE PRODUCTOS</p>
+                        <p id="dashboard-expired" class="text-amber-700 text-4xl font-black mt-1">00</p>
+                        <p id="dashboard-expiring-summary" class="text-xs text-amber-600 mt-1">0 por vencer (30 dias)</p>
+                        <button id="btn-ver-vencidos" class="mt-2 text-[11px] font-bold text-amber-700 bg-white/80 border border-amber-200 rounded-full px-2 py-1 hover:bg-white">Ver nombres</button>
+                    </div>
+                </div>
+
+                <div class="mb-4 relative">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-primary/10 text-primary border border-primary/30 flex items-center justify-center shadow-sm">
+                        <span class="material-symbols-outlined text-lg">search</span>
+                    </span>
+                    <input id="buscar-inventario-panel" type="text" placeholder="Buscar producto en panel..." class="w-full border-2 border-primary/30 rounded-xl pl-14 pr-3 py-2.5 text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary">
+                </div>
+
+                <!-- Sello de confianza -->
+                <div class="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-3 mb-6 shadow-sm flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-green-600 text-2xl">verified</span>
+                    <p class="text-green-800 text-xs font-bold text-center">
+                        Tu Farmacia tiene 98% de integridad de datos.<br>
+                        <span class="text-green-600">¡Eres la más recomendada en Bosa Brasilia!</span>
+                    </p>
+                </div>
+
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-slate-700 text-lg font-bold flex items-center gap-2">
+                        <span class="material-symbols-outlined text-slate-400">inventory</span>
+                        Inventario Completo
+                    </h3>
+                    <div class="flex gap-2">
+                        <button id="btn-agregar-producto" class="text-xs bg-green-600 text-white px-3 py-2 rounded-lg font-bold flex items-center gap-1 hover:bg-green-700">
+                            <span class="material-symbols-outlined text-base">add</span> Agregar productos
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Contenedor de inventario -->
+                <div id="inventario-completo" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <!-- Productos cargados dinámicamente -->
+                </div>
+
+                <div id="modal-listado-productos" class="hidden fixed inset-0 bg-black/50 z-[75] flex items-center justify-center p-4">
+                    <div class="bg-white rounded-2xl max-w-lg w-full max-h-[80vh] overflow-y-auto p-5">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 id="modal-listado-titulo" class="text-lg font-black text-primary">Listado</h3>
+                            <button id="cerrar-modal-listado" class="text-slate-500">
+                                <span class="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                        <ul id="modal-listado-items" class="space-y-2 text-sm text-slate-700"></ul>
+                    </div>
+                </div>
+
+                <div id="modal-exportar" class="hidden fixed inset-0 bg-black/50 z-[76] flex items-center justify-center p-4">
+                    <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-lg font-black text-primary flex items-center gap-2">
+                                <span class="material-symbols-outlined">print</span>
+                                Opciones de impresion
+                            </h3>
+                            <button id="cerrar-modal-exportar" class="text-slate-500">
+                                <span class="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                        <p class="text-sm text-slate-600 mb-4">Elige como quieres sacar la hoja del inventario.</p>
+                        <div class="space-y-2">
+                            <button id="btn-imprimir-pagina" class="w-full bg-slate-800 text-white py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-slate-700">
+                                <span class="material-symbols-outlined">print</span> Imprimir hoja
+                            </button>
+                            <button id="btn-exportar-pdf-modal" class="w-full bg-red-600 text-white py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-red-700">
+                                <span class="material-symbols-outlined">picture_as_pdf</span> Descargar PDF
+                            </button>
+                            <button id="btn-exportar-excel-modal" class="w-full bg-green-600 text-white py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-green-700">
+                                <span class="material-symbols-outlined">table_chart</span> Descargar Excel
+                            </button>
+                            <button id="cancelar-modal-exportar" class="w-full bg-slate-100 text-slate-700 py-2.5 rounded-xl font-bold hover:bg-slate-200">
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </section>
+    </main>
+
+    <!-- BARRA DE NAVEGACIÓN -->
+    <nav class="fixed bottom-0 left-0 right-0 flex border-t border-slate-200 bg-white/95 backdrop-blur-md px-4 pb-4 pt-2 z-50">
+        <a href="#" id="nav-btn-home" class="nav-btn flex flex-1 flex-col items-center justify-center gap-0.5 text-primary" data-target="home"><span class="material-symbols-outlined text-2xl">home</span><p class="text-xs font-bold">Inicio</p></a>
+        <a href="#" id="nav-btn-botiquin" class="nav-btn flex flex-1 flex-col items-center justify-center gap-0.5 text-slate-400" data-target="botiquin"><span class="material-symbols-outlined text-2xl">inventory_2</span><p class="text-xs font-medium">Botiquín</p></a>
+        <a href="#" id="nav-btn-mapa" class="nav-btn flex flex-1 flex-col items-center justify-center gap-0.5 text-slate-400" data-target="mapa"><span class="material-symbols-outlined text-2xl">box</span><p class="text-xs font-medium">Compras</p></a>
+        <a href="#" id="nav-btn-panel" class="nav-btn hidden flex flex-1 flex-col items-center justify-center gap-0.5 text-slate-400" data-target="panel"><span id="panel-nav-icon" class="material-symbols-outlined text-2xl">admin_panel_settings</span><p id="panel-nav-label" class="text-xs font-medium">Panel</p></a>
+    </nav>
+</div>
+
+<!-- MODAL ACCESO CLIENTE -->
+<div id="modal-cliente-access" class="hidden fixed inset-0 bg-black/50 z-[72] flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full shadow-2xl overflow-hidden border-2 border-primary/10">
+        <div class="bg-primary text-white p-4 flex items-center justify-between">
+            <h3 class="text-lg font-black flex items-center gap-2">
+                <span class="material-symbols-outlined">account_circle</span>
+                Inicio de sesion
+            </h3>
+            <button id="cerrar-cliente-access" class="text-white"><span class="material-symbols-outlined">close</span></button>
+        </div>
+        <div class="p-4 space-y-4">
+            <p class="text-sm text-slate-600">Ingresa con tu correo y clave para acceder de forma segura.</p>
+            <label class="block">
+                <span class="text-xs font-bold text-slate-600 uppercase">Nombre (opcional)</span>
+                <input id="cliente-access-name" type="text" class="mt-1 w-full border border-slate-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Tu nombre">
+            </label>
+            <label class="block">
+                <span class="text-xs font-bold text-slate-600 uppercase">Correo</span>
+                <input id="cliente-access-email" type="email" autocomplete="username" class="mt-1 w-full border border-slate-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="usuario@gmail.com">
+            </label>
+            <label class="block">
+                <span class="text-xs font-bold text-slate-600 uppercase">Clave</span>
+                <input id="cliente-access-password" type="password" autocomplete="current-password" class="mt-1 w-full border border-slate-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="••••••••">
+            </label>
+            <div class="grid grid-cols-2 gap-2">
+                <button id="cancelar-cliente-access" class="bg-slate-100 text-slate-700 py-2 rounded-xl font-bold">Cancelar</button>
+                <button id="confirmar-cliente-access" class="bg-primary text-white py-2 rounded-xl font-bold">Entrar</button>
+            </div>
+            <button id="cerrar-sesion-cliente" class="w-full bg-slate-800 text-white py-2 rounded-xl font-bold">Cerrar sesion cliente</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL PAGO PREMIUM -->
+<div id="modal-premium" class="hidden fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl">
+        <div class="bg-primary text-white p-4 flex items-center justify-between">
+            <h3 class="text-lg font-black flex items-center gap-2">
+                <span class="material-symbols-outlined">workspace_premium</span>
+                Activar Premium
+            </h3>
+            <button id="cerrar-premium" class="text-white"><span class="material-symbols-outlined">close</span></button>
+        </div>
+        <div class="p-4 space-y-4">
+            <div class="bg-amber-50 border border-amber-200 rounded-xl p-3">
+                <p class="text-sm text-slate-700">Plan Premium mensual</p>
+                <p class="text-2xl font-black text-primary">$19.900</p>
+                <p class="text-xs text-slate-500">Descuento, prioridad y envio gratis</p>
+            </div>
+
+            <div>
+                <p class="text-sm font-bold text-slate-700 mb-2">Metodos de pago</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <label class="border border-slate-200 rounded-xl p-2 flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="pago-metodo" value="visa" checked>
+                        <span class="inline-flex items-center justify-center rounded-md bg-blue-600 text-white text-[10px] font-black px-2 py-1">VISA</span>
+                        <span class="text-xs text-slate-600">Tarjeta</span>
+                    </label>
+                    <label class="border border-slate-200 rounded-xl p-2 flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="pago-metodo" value="mastercard">
+                        <span class="inline-flex items-center justify-center rounded-md bg-red-500 text-white text-[10px] font-black px-2 py-1">MC</span>
+                        <span class="text-xs text-slate-600">MasterCard</span>
+                    </label>
+                    <label class="border border-slate-200 rounded-xl p-2 flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="pago-metodo" value="pse">
+                        <span class="inline-flex items-center justify-center rounded-md bg-indigo-600 text-white text-[10px] font-black px-2 py-1">PSE</span>
+                        <span class="text-xs text-slate-600">Debito</span>
+                    </label>
+                    <label class="border border-slate-200 rounded-xl p-2 flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="pago-metodo" value="nequi">
+                        <span class="inline-flex items-center justify-center rounded-md bg-fuchsia-600 text-white text-[10px] font-black px-2 py-1">NEQUI</span>
+                        <span class="text-xs text-slate-600">Billetera</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="flex gap-2">
+                <button id="cancelar-premium" class="flex-1 bg-slate-100 text-slate-700 py-2 rounded-xl font-bold">Cancelar</button>
+                <button id="confirmar-premium" class="flex-1 bg-primary text-white py-2 rounded-xl font-bold">Pagar y activar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="modal-imagen-producto" class="hidden fixed inset-0 bg-black/80 z-[80] flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl">
+        <div class="flex items-center justify-between p-3 border-b border-slate-200">
+            <h3 id="modal-imagen-titulo" class="font-bold text-slate-800">Imagen del producto</h3>
+            <button id="cerrar-modal-imagen" class="text-slate-700"><span class="material-symbols-outlined">close</span></button>
+        </div>
+        <div class="p-3 bg-slate-50">
+            <img id="modal-imagen-contenido" src="" alt="Producto" class="w-full max-h-[70vh] object-contain rounded-xl bg-white border border-slate-200">
+        </div>
+    </div>
+</div>
+
+<!-- MODAL CREAR PRODUCTO -->
+<div id="modal-crear-producto" class="hidden fixed inset-0 bg-black/50 z-[85] flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-bold text-slate-800">Agregar Producto</h3>
+            <button id="cerrar-modal-crear" class="text-slate-500 hover:text-slate-700">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        
+        <div class="space-y-3 mb-4">
+            <div>
+                <label class="text-xs font-bold text-slate-600 uppercase">Nombre del Producto</label>
+                <input id="crear-nombre" type="text" placeholder="Ej: Amoxicilina 500mg" class="w-full mt-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+            </div>
+            
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="text-xs font-bold text-slate-600 uppercase">Stock</label>
+                    <input id="crear-stock" type="number" placeholder="0" min="0" class="w-full mt-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-600 uppercase">Precio</label>
+                    <input id="crear-precio" type="number" placeholder="0" min="0" step="100" class="w-full mt-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="text-xs font-bold text-slate-600 uppercase">Categoría</label>
+                    <select id="crear-categoria" class="w-full mt-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                        <option value="">Seleccionar</option>
+                        <option value="antibiotico">Antibiótico</option>
+                        <option value="analgesico">Analgésico</option>
+                        <option value="cardiovascular">Cardiovascular</option>
+                        <option value="diabetes">Diabetes</option>
+                        <option value="gastro">Gastroenterología</option>
+                        <option value="respiratorio">Respiratorio</option>
+                        <option value="general">General</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-600 uppercase">Vencimiento</label>
+                    <input id="crear-vence" type="date" class="w-full mt-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                </div>
+            </div>
+        </div>
+        
+        <div class="flex gap-2">
+            <button id="cancelar-crear-producto" class="flex-1 bg-slate-100 text-slate-700 py-2 rounded-lg font-bold hover:bg-slate-200">Cancelar</button>
+            <button id="confirmar-crear-producto" class="flex-1 bg-green-600 text-white py-2 rounded-lg font-bold hover:bg-green-700">Crear</button>
+        </div>
+    </div>
+</div>
+
+<!-- SCRIPTS -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://checkout.wompi.co/widget.js"></script>
+<script src="app.js?v=20260327-12"></script>
+
+</body>
+</html>

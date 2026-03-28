@@ -1,0 +1,9 @@
+{
+  "name": "Vital Market",
+  "short_name": "Vital",
+  "description": "Gestión de farmacia en Bosa Brasilia",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#003366",
+  "theme_color": "#FFD700"
+}

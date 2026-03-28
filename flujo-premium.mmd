@@ -1,0 +1,14 @@
+flowchart TD
+    A[Usuario pulsa Actualizar a Premium] --> B[Frontend abre modal de pago]
+    B --> C[Frontend crea intento en backend]
+    C --> D[Backend genera reference y firma Wompi]
+    D --> E[Frontend abre WidgetCheckout]
+    E --> F{Pago aprobado}
+    F -- No --> G[Mostrar estado pendiente o fallido]
+    F -- Si --> H[Frontend confirma transactionId en backend]
+    H --> I[Backend consulta transaccion en Wompi]
+    I --> J{Status APPROVED}
+    J -- No --> K[No activar premium]
+    J -- Si --> L[Backend guarda profile y transactions en Firebase]
+    L --> M[Frontend sincroniza estado premium]
+    M --> N[UI muestra Premium activo]
