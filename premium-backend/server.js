@@ -95,6 +95,18 @@ function clearPanelFailures(ip) {
   panelLoginAttempts.delete(ip);
 }
 
+app.get('/', (_req, res) => {
+  res.json({ 
+    message: 'Vital Market Premium Backend', 
+    status: 'active',
+    endpoints: {
+      health: '/health',
+      panel: '/api/panel/login',
+      premium: '/api/premium/*'
+    }
+  });
+});
+
 app.get('/health', (_req, res) => {
   res.json({ ok: true, service: 'premium-backend' });
 });
