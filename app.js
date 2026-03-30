@@ -69,13 +69,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     let inventarioSuscrito = false;
     let guardandoInventario = false;
     let guardadoInventarioPendiente = false;
-    let premiumActivo = false;
-    let premiumUntil = '';
+    let premiumActivo = localStorage.getItem('vitalMarketPremium') === 'true';
+    let premiumUntil = localStorage.getItem('vitalMarketPremiumUntil') || '';
     const DEFAULT_PREMIUM_BACKEND_URL = 'https://vital-market-backend.onrender.com';
     const PREMIUM_BACKEND_URL = (() => {
         const configuredUrl = localStorage.getItem('premiumBackendUrl');
         if (configuredUrl) return configuredUrl;
-
         const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
         return isLocalHost ? 'http://localhost:8787' : DEFAULT_PREMIUM_BACKEND_URL;
     })();
@@ -103,8 +102,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     let centroNotificaciones = [];
     let pedidosEntregadosNotificados = new Set();
     let autoSyncSeguimientoEnCurso = false;
-    let colaNotificaciones = [];
-    let notificacionMostrandose = false;
     let authEstadoInicialProcesado = false;
     let autenticandoCliente = false;
 
@@ -123,11 +120,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         const ts = new Date(untilIso).getTime();
         if (!Number.isFinite(ts)) return false;
         return ts > Date.now();
-    }
-
-    function esPremiumVisualActivo() {
-        // Premium visual aplica si el cliente compro premium o si el panel de drogueria esta autenticado.
-        return Boolean(premiumActivo || panelFarmaciaAutenticado);
     }
 
     function obtenerClaveNotificaciones() {
@@ -301,45 +293,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function obtenerPremiumUserId() {
-        // Premium debe ser por cuenta real del cliente, no por dispositivo invitado.
-        const uid = String(clienteSesion?.uid || '').trim();
-        if (uid) return uid;
+        const key = 'vitalMarketUserId';
+        let userId = localStorage.getItem(key);
+        if (userId) return userId;
 
-        const email = normalizarEmail(clienteSesion?.email || '');
-        if (email) return email;
-
-        return '';
-    }
-
-    function obtenerClavePremiumUsuario(sufijo) {
-        const userId = obtenerPremiumUserId();
-        return userId ? `vitalMarketPremium_${sufijo}_${userId}` : '';
-    }
-
-    function guardarPremiumLocalUsuario() {
-        const keyActivo = obtenerClavePremiumUsuario('activo');
-        const keyUntil = obtenerClavePremiumUsuario('until');
-        if (!keyActivo || !keyUntil) return;
-
-        localStorage.setItem(keyActivo, String(premiumActivo));
-        if (premiumUntil) {
-            localStorage.setItem(keyUntil, premiumUntil);
-        } else {
-            localStorage.removeItem(keyUntil);
-        }
-    }
-
-    function cargarPremiumLocalUsuario() {
-        const keyActivo = obtenerClavePremiumUsuario('activo');
-        const keyUntil = obtenerClavePremiumUsuario('until');
-        if (!keyActivo || !keyUntil) {
-            premiumActivo = false;
-            premiumUntil = '';
-            return;
-        }
-
-        premiumActivo = localStorage.getItem(keyActivo) === 'true';
-        premiumUntil = localStorage.getItem(keyUntil) || '';
+        userId = `user_${Math.random().toString(36).slice(2, 10)}_${Date.now().toString(36)}`;
+        localStorage.setItem(key, userId);
+        return userId;
     }
 
     async function sincronizarSeguimientoPedidoActual() {
@@ -403,7 +363,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         clienteSesion = sesion;
         cargarNotificacionesPersistidas();
         cargarEntregadosNotificados();
-        await sincronizarEstadoPremium();
         actualizarEstadoSesionClienteUI();
         await sincronizarSeguimientoPedidoActual();
         revisarPedidosEntregadosParaNotificar();
@@ -417,13 +376,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else {
             clienteSesion = null;
             seguimientoPedidoActual = null;
-            premiumActivo = false;
-            premiumUntil = '';
             centroNotificaciones = [];
             pedidosEntregadosNotificados = new Set();
             actualizarCampanaNotificacionesUI();
             renderizarCentroNotificaciones();
-            actualizarEstadoPremiumUI();
             actualizarEstadoSesionClienteUI();
             actualizarVistaMapaSeguimiento();
             if (authEstadoInicialProcesado) {
@@ -506,19 +462,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const mensajeNormalizado = String(rawMessage || '').toUpperCase();
         if (code === 'auth/internal-error' && mensajeNormalizado.includes('CONFIGURATION_NOT_FOUND')) {
-            return 'Contraseña o correo incorrecto';
+            return 'Firebase Auth no esta configurado para esta API Key/proyecto. Abre Firebase Console, activa Authentication y proveedor Email/Password';
         }
 
         const map = {
             'auth/operation-not-allowed': 'Debes activar Email/Password en Firebase Authentication',
             'auth/invalid-api-key': 'La configuracion de Firebase API Key no es valida',
-            'auth/internal-error': 'Contraseña o correo incorrecto',
+            'auth/internal-error': 'Error interno de Firebase Authentication. Revisa configuracion de Auth y dominio autorizado',
             'auth/network-request-failed': 'Sin conexion o red bloqueada al contactar Firebase',
             'auth/user-disabled': 'Esta cuenta fue deshabilitada',
             'auth/invalid-email': 'Correo no valido. Usa formato usuario@correo.com',
             'auth/too-many-requests': 'Demasiados intentos. Espera un momento e intenta de nuevo',
-            'auth/wrong-password': 'Contraseña o correo incorrecto',
-            'auth/user-not-found': 'Contraseña o correo incorrecto',
+            'auth/wrong-password': 'Correo o clave incorrectos',
+            'auth/user-not-found': 'Correo o clave incorrectos',
             'auth/email-already-in-use': 'Este correo ya existe. Intenta iniciar sesion',
             'auth/weak-password': 'La clave debe tener al menos 6 caracteres'
         };
@@ -1084,9 +1040,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (logoutBtn) {
             logoutBtn.classList.toggle('hidden', !panelFarmaciaAutenticado);
         }
-
-        // Si el panel inicia/cierra sesión, actualizar también el tema premium visual.
-        actualizarEstadoPremiumUI();
     }
 
     async function validarCredencialesPanelEnBackend(email, password) {
@@ -1351,16 +1304,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         const basicBenefits = document.getElementById('basic-benefits');
         const upgradeBtn = document.getElementById('upgrade-premium-btn');
         const body = document.body;
-        const premiumVisual = esPremiumVisualActivo();
 
         if (badge) {
-            if (premiumVisual) {
+            if (premiumActivo) {
                 badge.innerText = 'MIEMBRO PREMIUM';
                 badge.className = 'bg-accent text-primary text-[10px] font-black px-2 py-0.5 rounded-full';
                 if (premiumUntil) {
                     badge.title = `Vence: ${new Date(premiumUntil).toLocaleDateString()}`;
-                } else if (panelFarmaciaAutenticado) {
-                    badge.title = 'Cliente de panel premium activo';
                 }
                 // Aplicar tema dorado cuando es premium
                 body.classList.add('premium-theme');
@@ -1460,7 +1410,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         premiumActivo = true;
         premiumUntil = payload?.premiumUntil || '';
-        guardarPremiumLocalUsuario();
+        localStorage.setItem('vitalMarketPremium', 'true');
+        if (premiumUntil) {
+            localStorage.setItem('vitalMarketPremiumUntil', premiumUntil);
+        }
         actualizarEstadoPremiumUI();
         cerrarModalPremium();
         mostrarNotificacion('Pago aprobado y Premium activado', 'success');
@@ -1489,7 +1442,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         const payload = await response.json();
         premiumActivo = true;
         premiumUntil = payload?.premiumUntil || '';
-        guardarPremiumLocalUsuario();
+        localStorage.setItem('vitalMarketPremium', 'true');
+        if (premiumUntil) {
+            localStorage.setItem('vitalMarketPremiumUntil', premiumUntil);
+        }
         actualizarEstadoPremiumUI();
         cerrarModalPremium();
         mostrarNotificacion('Premium de prueba activado', 'success');
@@ -1520,22 +1476,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     async function sincronizarEstadoPremium() {
-        if (!clienteSesion?.uid) {
-            premiumActivo = false;
-            premiumUntil = '';
-            actualizarEstadoPremiumUI();
-            return;
-        }
-
-        // Estado base por usuario (offline) antes de consultar backend/Firebase.
-        cargarPremiumLocalUsuario();
-
         const perfilFirebase = await leerPremiumDesdeFirebaseCliente();
 
         if (perfilFirebase) {
             premiumUntil = perfilFirebase.premiumUntil || '';
             premiumActivo = Boolean(perfilFirebase.active) && premiumSigueVigente(premiumUntil);
-            guardarPremiumLocalUsuario();
+            localStorage.setItem('vitalMarketPremium', String(premiumActivo));
+            if (premiumUntil) localStorage.setItem('vitalMarketPremiumUntil', premiumUntil);
             actualizarEstadoPremiumUI();
             return;
         }
@@ -1544,24 +1491,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (estadoBackend?.ok) {
             premiumUntil = estadoBackend.premiumUntil || '';
             premiumActivo = Boolean(estadoBackend.active) && premiumSigueVigente(premiumUntil);
-            guardarPremiumLocalUsuario();
+            localStorage.setItem('vitalMarketPremium', String(premiumActivo));
+            if (premiumUntil) localStorage.setItem('vitalMarketPremiumUntil', premiumUntil);
             actualizarEstadoPremiumUI();
             return;
         }
 
         // Fallback local para modo offline
         premiumActivo = premiumSigueVigente(premiumUntil) && premiumActivo;
-        guardarPremiumLocalUsuario();
+        localStorage.setItem('vitalMarketPremium', String(premiumActivo));
         actualizarEstadoPremiumUI();
     }
 
     async function procesarPagoPremium() {
-        if (!clienteSesion?.uid) {
-            abrirModalAccesoCliente();
-            mostrarNotificacion('Inicia sesion para comprar Premium', 'info');
-            return;
-        }
-
         if (premiumActivo) {
             mostrarNotificacion('Ya tienes Premium activo', 'info');
             return;
@@ -1950,8 +1892,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function evaluarVencimientos() {
-        if (!esPremiumVisualActivo()) return;
-
         const porVencer = [];
         const vencidos = [];
 
@@ -2061,8 +2001,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function evaluarAlertasStock() {
-        if (!esPremiumVisualActivo()) return;
-
         Object.entries(inventarioActual).forEach(([id, producto]) => {
             const semaforo = obtenerSemaforoStock(producto.stock);
             const nivelAnterior = ultimoNivelStockNotificado[id];
@@ -2123,58 +2061,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    function procesarColaNotificaciones() {
-        if (notificacionMostrandose) return;
-        if (!Array.isArray(colaNotificaciones) || colaNotificaciones.length === 0) return;
-
-        const siguiente = colaNotificaciones.shift();
-        const tipo = String(siguiente?.tipo || 'info');
-        const mensaje = String(siguiente?.mensaje || 'Notificacion');
-
-        const config = tipo === 'success'
-            ? {
-                icono: 'check_circle',
-                clases: 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white ring-2 ring-emerald-200/70'
-            }
-            : tipo === 'error'
-                ? {
-                    icono: 'error',
-                    clases: 'bg-gradient-to-r from-rose-500 to-red-500 text-white ring-2 ring-rose-200/70'
-                }
-                : {
-                    icono: 'info',
-                    clases: 'bg-gradient-to-r from-sky-500 to-indigo-500 text-white ring-2 ring-sky-200/70'
-                };
-
-        notificacionMostrandose = true;
-
+    function mostrarNotificacion(mensaje, tipo = 'info') {
         const notificacion = document.createElement('div');
-        notificacion.className = `fixed top-4 left-1/2 -translate-x-1/2 z-50 min-w-[320px] max-w-[90vw] px-5 py-3 rounded-2xl shadow-2xl ${config.clases}`;
+        notificacion.className = `fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-3 rounded-xl shadow-lg animate-fade-in ${
+            tipo === 'success' ? 'bg-green-500 text-white' : 'bg-blue-500 text-white'
+        }`;
         notificacion.innerHTML = `
-            <div class="flex items-center gap-2.5 font-semibold">
-                <span class="material-symbols-outlined">${config.icono}</span>
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined">${tipo === 'success' ? 'check_circle' : 'info'}</span>
                 <span>${mensaje}</span>
             </div>
         `;
-
         document.body.appendChild(notificacion);
-
-        setTimeout(() => {
-            notificacion.style.opacity = '0';
-            notificacion.style.transform = 'translateX(-50%) translateY(-8px)';
-            notificacion.style.transition = 'opacity 220ms ease, transform 220ms ease';
-
-            setTimeout(() => {
-                notificacion.remove();
-                notificacionMostrandose = false;
-                procesarColaNotificaciones();
-            }, 240);
-        }, 3200);
-    }
-
-    function mostrarNotificacion(mensaje, tipo = 'info') {
-        colaNotificaciones.push({ mensaje, tipo });
-        procesarColaNotificaciones();
+        setTimeout(() => notificacion.remove(), 3000);
     }
 
     function mostrarCarrito() {
@@ -3108,7 +3007,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     inicializarEventos();
     cargarNotificacionesPersistidas();
     cargarEntregadosNotificados();
-    actualizarEstadoPremiumUI();
+    await sincronizarEstadoPremium();
     actualizarEstadoSesionClienteUI();
     iniciarEscuchaSesionCliente();
     actualizarEstadoAccesoPanelUI();
