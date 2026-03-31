@@ -382,7 +382,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (sesion.email && sesion.email === 'drogueria.bosa@gmail.com') {
                 premiumActivo = true;
                 premiumUntil = '';
-                localStorage.setItem('vitalMarketPremium', 'true');
                 panelFarmaciaAutenticado = true;
                 window.panelFarmaciaAutenticado = true;
                 localStorage.setItem('vitalMarketPanelAuth', 'true');
@@ -390,14 +389,21 @@ document.addEventListener('DOMContentLoaded', async () => {
                 actualizarEstadoAccesoPanelUI && actualizarEstadoAccesoPanelUI();
                 cambiarPantalla && cambiarPantalla('panel');
             } else {
-                // Usuario normal: verificar premium
-                premiumUntil = localStorage.getItem('vitalMarketPremiumUntil') || '';
-                if (premiumUntil && new Date(premiumUntil) > new Date()) {
-                    premiumActivo = true;
-                    localStorage.setItem('vitalMarketPremium', 'true');
-                } else {
-                    premiumActivo = false;
-                    localStorage.setItem('vitalMarketPremium', 'false');
+                // Usuario normal: leer premium desde Firebase
+                premiumActivo = false;
+                premiumUntil = '';
+                if (database && sesion.uid) {
+                    try {
+                        const snap = await database.ref(`clientesPerfil/${sesion.uid}`).once('value');
+                        const perfil = snap.val();
+                        if (perfil && perfil.premiumActivo && perfil.premiumUntil && new Date(perfil.premiumUntil) > new Date()) {
+                            premiumActivo = true;
+                            premiumUntil = perfil.premiumUntil;
+                        }
+                    } catch (e) {
+                        premiumActivo = false;
+                        premiumUntil = '';
+                    }
                 }
                 actualizarEstadoPremiumUI && actualizarEstadoPremiumUI();
             }
@@ -405,8 +411,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             // No hay usuario: plan básico
             premiumActivo = false;
             premiumUntil = '';
-            localStorage.setItem('vitalMarketPremium', 'false');
-            localStorage.removeItem('vitalMarketPremiumUntil');
             clienteSesion = null;
             seguimientoPedidoActual = null;
             centroNotificaciones = [];
@@ -445,8 +449,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Continuar para limpiar todo el estado local
         }
         // Limpiar datos de usuario, premium y compras
-        localStorage.removeItem('vitalMarketPremium');
-        localStorage.removeItem('vitalMarketPremiumUntil');
+        // Eliminado: localStorage.removeItem('vitalMarketPremium');
+        // Eliminado: localStorage.removeItem('vitalMarketPremiumUntil');
         localStorage.removeItem('misCompras');
         localStorage.removeItem('carrito');
         localStorage.removeItem('clienteSesion');
@@ -1470,9 +1474,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         premiumActivo = true;
         premiumUntil = payload?.premiumUntil || '';
-        localStorage.setItem('vitalMarketPremium', 'true');
-        if (premiumUntil) {
-            localStorage.setItem('vitalMarketPremiumUntil', premiumUntil);
+        // Guardar premium en Firebase
+        if (database && clienteSesion?.uid) {
+            await database.ref(`clientesPerfil/${clienteSesion.uid}`).update({
+                premiumActivo: true,
+                premiumUntil: premiumUntil
+            });
         }
         actualizarEstadoPremiumUI();
         cerrarModalPremium();
@@ -1502,9 +1509,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         const payload = await response.json();
         premiumActivo = true;
         premiumUntil = payload?.premiumUntil || '';
-        localStorage.setItem('vitalMarketPremium', 'true');
-        if (premiumUntil) {
-            localStorage.setItem('vitalMarketPremiumUntil', premiumUntil);
+        // Guardar premium en Firebase
+        if (database && clienteSesion?.uid) {
+            await database.ref(`clientesPerfil/${clienteSesion.uid}`).update({
+                premiumActivo: true,
+                premiumUntil: premiumUntil
+            });
         }
         actualizarEstadoPremiumUI();
         cerrarModalPremium();
@@ -1541,8 +1551,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (perfilFirebase) {
             premiumUntil = perfilFirebase.premiumUntil || '';
             premiumActivo = Boolean(perfilFirebase.active) && premiumSigueVigente(premiumUntil);
-            localStorage.setItem('vitalMarketPremium', String(premiumActivo));
-            if (premiumUntil) localStorage.setItem('vitalMarketPremiumUntil', premiumUntil);
             actualizarEstadoPremiumUI();
             return;
         }
@@ -1551,15 +1559,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (estadoBackend?.ok) {
             premiumUntil = estadoBackend.premiumUntil || '';
             premiumActivo = Boolean(estadoBackend.active) && premiumSigueVigente(premiumUntil);
-            localStorage.setItem('vitalMarketPremium', String(premiumActivo));
-            if (premiumUntil) localStorage.setItem('vitalMarketPremiumUntil', premiumUntil);
             actualizarEstadoPremiumUI();
             return;
         }
 
         // Fallback local para modo offline
         premiumActivo = premiumSigueVigente(premiumUntil) && premiumActivo;
-        localStorage.setItem('vitalMarketPremium', String(premiumActivo));
         actualizarEstadoPremiumUI();
     }
 
@@ -1932,72 +1937,7 @@ document.getElementById('buscar-botiquin')?.addEventListener('input', () => {
                         <span class="material-symbols-outlined text-xs">add</span> Agregar
                     </button>
                     <button onclick="verDetallesProducto('${prod.id}')" class="bg-slate-50 text-primary font-bold py-1.5 rounded-lg text-[11px] border border-slate-200 hover:bg-slate-100 transition">
-                        Detalles
-                    </button>
-                </div>
-            </div>
-        `;
-        }).join('');
-    }
-
-    function actualizarInventarioCompleto() {
-        const container = document.getElementById('inventario-completo');
-        if (!container) return;
-
-        const busquedaPanel = (document.getElementById('buscar-inventario-panel')?.value || '').trim().toLowerCase();
-        const totalGeneral = Object.keys(inventarioActual).length;
-        const productos = Object.entries(inventarioActual)
-            .filter(([_, prod]) => {
-                if (!busquedaPanel) return true;
-                return (prod.nombre || '').toLowerCase().includes(busquedaPanel);
-            })
-            .sort((a, b) => (a[1]?.nombre || '').localeCompare(b[1]?.nombre || ''));
-        const totalProductos = productos.length;
-
-        const productosCount = document.getElementById('productos-count');
-        if (productosCount) productosCount.textContent = busquedaPanel ? `${totalProductos} de ${totalGeneral}` : `${totalProductos} productos`;
-
-        container.innerHTML = productos.map(([id, prod]) => {
-            const semaforo = obtenerSemaforoStock(prod.stock);
-            const fechaVence = prod.vence || '';
-            const imagenUrl = resolverImagenProducto(prod);
-            return `
-                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                    <h4 class="font-bold text-slate-800 text-lg mb-3">${prod.nombre}</h4>
-                    
-                    <div class="flex gap-4 mb-4">
-                        <div class="flex flex-col items-center gap-2">
-                            <img src="${imagenUrl}" alt="${prod.nombre}" data-img-src="${imagenUrl}" data-img-name="${prod.nombre}" loading="lazy" onerror="this.onerror=null;this.src='${IMAGEN_PLACEHOLDER}'" class="producto-imagen-click cursor-zoom-in w-28 h-28 rounded-lg object-contain border-2 border-slate-300 bg-white p-1">
-                            <label class="text-xs font-bold text-primary cursor-pointer hover:underline">
-                                📷 Subir imagen
-                                <input type="file" id="file-imagen-${id}" accept="image/*" class="hidden" onchange="subirImagenProducto('${id}', this)">
-                            </label>
-                        </div>
-                        
-                        <div class="flex-1 space-y-3">
-                            <div class="flex items-center gap-3">
-                                <div>
-                                    <p class="text-xs text-slate-500 font-semibold uppercase">Stock</p>
-                                    <p class="text-2xl font-bold text-slate-700">${prod.stock}</p>
-                                </div>
-                                <span class="px-3 py-1 rounded-lg font-bold text-xs uppercase bg-gradient-to-r ${semaforo.colorFondo}">
-                                    ${semaforo.etiqueta}
-                                </span>
-                            </div>
-                            
-                            <div>
-                                <p class="text-xs text-slate-500 font-semibold uppercase mb-1">Vencimiento</p>
-                                <p class="text-sm font-semibold text-slate-700">${prod.vence || 'N/A'}</p>
-                            </div>
-                            
-                            <div>
-                                <p class="text-xs text-slate-500 font-semibold uppercase mb-1">Categoría</p>
-                                <p class="text-sm font-semibold text-slate-700 capitalize">${prod.categoria || 'general'}</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="space-y-2 pt-3 border-t border-slate-200">
+                        Ver detalles
                         <div class="flex gap-2">
                             <input
                                 type="number"
