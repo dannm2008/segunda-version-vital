@@ -674,12 +674,24 @@
                             <span class="material-symbols-outlined text-accent">workspace_premium</span>
                             <h4 class="font-bold text-primary">Beneficios Premium</h4>
                         </div>
-                        <div class="grid grid-cols-2 gap-2 text-sm">
-                            <div class="flex items-center gap-1"><span class="material-symbols-outlined text-green-600 text-base">check_circle</span><span>Envío gratis</span></div>
-                            <div class="flex items-center gap-1"><span class="material-symbols-outlined text-green-600 text-base">check_circle</span><span>5% descuento</span></div>
-                            <div class="flex items-center gap-1"><span class="material-symbols-outlined text-green-600 text-base">check_circle</span><span>Prioridad</span></div>
-                            <div class="flex items-center gap-1"><span class="material-symbols-outlined text-green-600 text-base">check_circle</span><span>Soporte 24/7</span></div>
+                        <div class="grid grid-cols-2 gap-2 text-sm text-slate-400">
+                            <div class="flex items-center gap-1 line-through"><span class="material-symbols-outlined text-base">close</span><span>Envío gratis</span></div>
+                            <div class="flex items-center gap-1 line-through"><span class="material-symbols-outlined text-base">close</span><span>5% descuento</span></div>
+                            <div class="flex items-center gap-1 line-through"><span class="material-symbols-outlined text-base">close</span><span>Prioridad</span></div>
+                            <div class="flex items-center gap-1 line-through"><span class="material-symbols-outlined text-base">close</span><span>Soporte 24/7</span></div>
                         </div>
+                        <button id="probar-premium-btn" class="w-full mt-3 bg-accent text-primary py-2 rounded-xl text-sm font-bold">Probar Premium</button>
+                                    <!-- Modal de métodos de pago -->
+                                    <div id="modal-metodos-pago" class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center hidden">
+                                        <div class="bg-white rounded-xl p-6 max-w-md w-full shadow-xl border border-slate-200">
+                                            <h2 class="text-xl font-bold mb-4 text-primary">Selecciona un método de pago</h2>
+                                            <div class="space-y-3 mb-4">
+                                                <button id="pago-wompi" class="w-full bg-yellow-400 text-primary font-bold py-2 rounded-lg border border-yellow-500">Pagar con Wompi</button>
+                                                <button id="pago-dev" class="w-full bg-slate-200 text-slate-700 font-bold py-2 rounded-lg border border-slate-300">Simular pago (pruebas)</button>
+                                            </div>
+                                            <button id="cerrar-modal-pago" class="w-full mt-2 bg-slate-100 text-slate-600 py-2 rounded-lg font-bold">Cancelar</button>
+                                        </div>
+                                    </div>
                     </div>
                 </div>
                 <div id="basic-benefits" class="mt-4">
@@ -737,11 +749,17 @@
 
             <div class="px-4 py-2 flex justify-between items-center">
                 <p class="text-lg font-bold text-accent"><span id="productos-visibles">10</span> productos disponibles</p>
-                <select id="ordenar-productos" class="text-xs border rounded-lg p-1">
-                    <option value="nombre">Ordenar por nombre</option>
-                    <option value="precio-menor">Menor precio</option>
-                    <option value="precio-mayor">Mayor precio</option>
-                </select>
+                <div class="flex items-center gap-2">
+                    <div class="relative">
+                        <input id="buscar-botiquin" type="text" placeholder="Buscar..." class="pl-8 pr-2 py-1 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+                        <span class="material-symbols-outlined absolute left-1 top-1.5 text-slate-400">search</span>
+                    </div>
+                    <select id="ordenar-productos" class="text-xs border rounded-lg p-1">
+                        <option value="nombre">Ordenar por nombre</option>
+                        <option value="precio-menor">Menor precio</option>
+                        <option value="precio-mayor">Mayor precio</option>
+                    </select>
+                </div>
             </div>
 
             <div class="p-4 grid grid-cols-2 gap-3" id="lista-productos">

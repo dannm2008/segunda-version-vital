@@ -69,8 +69,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     let inventarioSuscrito = false;
     let guardandoInventario = false;
     let guardadoInventarioPendiente = false;
-    let premiumActivo = localStorage.getItem('vitalMarketPremium') === 'true';
-    let premiumUntil = localStorage.getItem('vitalMarketPremiumUntil') || '';
+    let premiumActivo = false; // Por defecto, plan básico
+    let premiumUntil = '';
     const DEFAULT_PREMIUM_BACKEND_URL = 'https://vital-market-backend.onrender.com';
     const PREMIUM_BACKEND_URL = (() => {
         const configuredUrl = localStorage.getItem('premiumBackendUrl');
@@ -367,13 +367,46 @@ document.addEventListener('DOMContentLoaded', async () => {
         await sincronizarSeguimientoPedidoActual();
         revisarPedidosEntregadosParaNotificar();
         actualizarTarjetaSeguimiento();
+        // Mostrar historial de compras automáticamente al iniciar sesión
+        if (document.getElementById('mis-compras-lista')) {
+            cargarMisCompras();
+            document.getElementById('modal-historial-compras')?.classList.remove('hidden');
+        }
     }
 
     async function manejarCambioSesionCliente(user) {
         const sesion = construirSesionClienteDesdeAuth(user);
         if (sesion) {
             await guardarSesionCliente(sesion);
+            // Si es admin panel, siempre premium y panel habilitado
+            if (sesion.email && sesion.email === 'drogueria.bosa@gmail.com') {
+                premiumActivo = true;
+                premiumUntil = '';
+                localStorage.setItem('vitalMarketPremium', 'true');
+                panelFarmaciaAutenticado = true;
+                window.panelFarmaciaAutenticado = true;
+                localStorage.setItem('vitalMarketPanelAuth', 'true');
+                actualizarEstadoPremiumUI && actualizarEstadoPremiumUI();
+                actualizarEstadoAccesoPanelUI && actualizarEstadoAccesoPanelUI();
+                cambiarPantalla && cambiarPantalla('panel');
+            } else {
+                // Usuario normal: verificar premium
+                premiumUntil = localStorage.getItem('vitalMarketPremiumUntil') || '';
+                if (premiumUntil && new Date(premiumUntil) > new Date()) {
+                    premiumActivo = true;
+                    localStorage.setItem('vitalMarketPremium', 'true');
+                } else {
+                    premiumActivo = false;
+                    localStorage.setItem('vitalMarketPremium', 'false');
+                }
+                actualizarEstadoPremiumUI && actualizarEstadoPremiumUI();
+            }
         } else {
+            // No hay usuario: plan básico
+            premiumActivo = false;
+            premiumUntil = '';
+            localStorage.setItem('vitalMarketPremium', 'false');
+            localStorage.removeItem('vitalMarketPremiumUntil');
             clienteSesion = null;
             seguimientoPedidoActual = null;
             centroNotificaciones = [];
@@ -409,13 +442,25 @@ document.addEventListener('DOMContentLoaded', async () => {
                 console.error('Error cerrando sesion de cliente:', error);
                 mostrarNotificacion('No se pudo cerrar sesion', 'info');
             }
-            return;
+            // Continuar para limpiar todo el estado local
         }
+        // Limpiar datos de usuario, premium y compras
+        localStorage.removeItem('vitalMarketPremium');
+        localStorage.removeItem('vitalMarketPremiumUntil');
+        localStorage.removeItem('misCompras');
+        localStorage.removeItem('carrito');
+        localStorage.removeItem('clienteSesion');
+        localStorage.removeItem('seguimientoPedidoActual');
+        localStorage.removeItem('vitalMarketPanelAuth');
+        // Si tienes más claves relacionadas, agrégalas aquí
         clienteSesion = null;
         seguimientoPedidoActual = null;
+        premiumActivo = false;
+        premiumUntil = '';
         actualizarEstadoSesionClienteUI();
         actualizarVistaMapaSeguimiento();
         mostrarNotificacion('Sesion de cliente cerrada', 'info');
+        window.location.reload(); // Recarga la app para limpiar el estado visual
     }
 
     function actualizarEstadoSesionClienteUI() {
@@ -813,6 +858,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 infoGrid.innerHTML = `
                     <p class="text-slate-500">Codigo:</p>
                     <p class="font-bold text-slate-800 text-right">${pedido.codigo || '--'}</p>
+                    <p class="text-slate-500">Hora de compra:</p>
+                    <p class="font-bold text-slate-800 text-right">${pedido.creadoIso ? new Date(pedido.creadoIso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--'}</p>
                     <p class="text-slate-500">Llegada estimada:</p>
                     <p class="font-bold text-slate-800 text-right">${Number.isFinite(eta.getTime()) ? eta.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--'}</p>
                     <p class="text-slate-500">Recibe:</p>
@@ -1306,19 +1353,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         const body = document.body;
 
         if (badge) {
-            if (premiumActivo) {
+            // Solo mostrar 'MIEMBRO PREMIUM' si hay usuario logueado y premiumActivo
+            if (premiumActivo && clienteSesion) {
                 badge.innerText = 'MIEMBRO PREMIUM';
                 badge.className = 'bg-accent text-primary text-[10px] font-black px-2 py-0.5 rounded-full';
                 if (premiumUntil) {
                     badge.title = `Vence: ${new Date(premiumUntil).toLocaleDateString()}`;
                 }
-                // Aplicar tema dorado cuando es premium
                 body.classList.add('premium-theme');
             } else {
                 badge.innerText = 'PLAN BASICO';
                 badge.className = 'bg-slate-400 text-white text-[10px] font-black px-2 py-0.5 rounded-full';
                 badge.title = '';
-                // Remover tema dorado si no es premium
                 body.classList.remove('premium-theme');
             }
         }
@@ -1736,12 +1782,101 @@ document.addEventListener('DOMContentLoaded', async () => {
         const categoriaActual = categoriaFiltro || 'todos';
 
         let filtrados = productos;
+        // Evitar duplicados por ID
+        const idsUnicos = new Set();
+        filtrados = filtrados.filter(p => {
+            if (idsUnicos.has(p.id)) return false;
+            idsUnicos.add(p.id);
+            return true;
+        });
+        // Búsqueda por nombre desde la lupa de botiquín
+        const busquedaBotiquin = document.getElementById('buscar-botiquin')?.value.toLowerCase() || '';
+        if (busquedaBotiquin) {
+            filtrados = filtrados.filter(p => (p.nombre || '').toLowerCase().includes(busquedaBotiquin));
+        }
         if (busqueda) {
             filtrados = filtrados.filter(p => (p.nombre || '').toLowerCase().includes(busqueda));
         }
         if (categoriaActual !== 'todos') {
             filtrados = filtrados.filter(p => p.categoria === categoriaActual);
         }
+        // Filtrar productos vencidos
+        filtrados = filtrados.filter(p => {
+            const dias = diasHastaVencimiento(p.vence);
+            return dias === null || dias >= 0;
+        });
+// Evento para buscar en botiquín
+// Lógica para mostrar métodos de pago al pulsar Probar Premium
+const btnProbarPremium = document.getElementById('probar-premium-btn');
+if (btnProbarPremium) {
+    btnProbarPremium.addEventListener('click', () => {
+        if (!clienteSesion?.uid) {
+            mostrarNotificacion('Debes iniciar sesión para activar premium', 'info');
+            abrirModalAccesoCliente();
+            return;
+        }
+        document.getElementById('modal-metodos-pago')?.classList.remove('hidden');
+    });
+}
+
+document.getElementById('cerrar-modal-pago')?.addEventListener('click', () => {
+    document.getElementById('modal-metodos-pago')?.classList.add('hidden');
+});
+
+// Simulación de pago (pruebas)
+document.getElementById('pago-dev')?.addEventListener('click', async () => {
+    if (!clienteSesion?.uid) {
+        mostrarNotificacion('Debes iniciar sesión para activar premium', 'info');
+        return;
+    }
+    try {
+        const resp = await fetch(`${PREMIUM_BACKEND_URL}/api/premium/dev-activate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: clienteSesion.uid })
+        });
+        const data = await resp.json();
+        if (data.ok && data.approved) {
+            localStorage.setItem('vitalMarketPremium', 'true');
+            localStorage.setItem('vitalMarketPremiumUntil', data.premiumUntil);
+            premiumActivo = true;
+            premiumUntil = data.premiumUntil;
+            actualizarEstadoPremiumUI && actualizarEstadoPremiumUI();
+            mostrarNotificacion('¡Ahora eres usuario Premium!', 'success');
+            document.getElementById('modal-metodos-pago')?.classList.add('hidden');
+        } else {
+            mostrarNotificacion('No se pudo activar premium', 'error');
+        }
+    } catch (e) {
+        mostrarNotificacion('Error al activar premium', 'error');
+    }
+});
+
+// Pago real con Wompi (redirección o widget)
+document.getElementById('pago-wompi')?.addEventListener('click', async () => {
+    if (!clienteSesion?.uid) {
+        mostrarNotificacion('Debes iniciar sesión para activar premium', 'info');
+        return;
+    }
+    try {
+        const resp = await fetch(`${PREMIUM_BACKEND_URL}/api/premium/create-intent`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: clienteSesion.uid })
+        });
+        const data = await resp.json();
+        if (data.ok && data.intent && data.intent.redirectUrl) {
+            window.location.href = data.intent.redirectUrl;
+        } else {
+            mostrarNotificacion('No se pudo iniciar el pago', 'error');
+        }
+    } catch (e) {
+        mostrarNotificacion('Error al iniciar pago', 'error');
+    }
+});
+document.getElementById('buscar-botiquin')?.addEventListener('input', () => {
+    actualizarListaProductos();
+});
 
         const orden = document.getElementById('ordenar-productos')?.value || 'nombre';
         if (orden === 'precio-menor') {
