@@ -880,15 +880,22 @@ document.addEventListener('DOMContentLoaded', async () => {
                         const id = String(item?.id || '').trim();
                         const nombreProducto = inventarioActual[id]?.nombre || id || 'Producto';
                         const cantidad = Math.max(1, Number(item?.cantidad) || 0);
-                        
+
                         const productoRow = document.createElement('div');
                         productoRow.className = 'flex items-center justify-between bg-slate-50 rounded-lg p-3 text-sm';
-                        productoRow.innerHTML = `
-                            <span class="font-medium text-slate-800">${nombreProducto} <span class="text-slate-500">x${cantidad}</span></span>
-                            <button class="btn-eliminar-producto text-red-500 hover:text-red-700 hover:bg-red-100 px-3 py-2 rounded-lg font-bold transition-all flex items-center gap-1" data-codigo="${pedido.codigo}" data-item-index="${itemIndice}" title="Eliminar este producto">
+
+                        // Verificar estado del pedido
+                        const estadoPedido = obtenerEstadoPedido(pedido?.etaIso)?.texto || '';
+                        let btnEliminar = '';
+                        if (estadoPedido === 'EN PREPARACION') {
+                            btnEliminar = `<button class="btn-eliminar-producto text-red-500 hover:text-red-700 hover:bg-red-100 px-3 py-2 rounded-lg font-bold transition-all flex items-center gap-1" data-codigo="${pedido.codigo}" data-item-index="${itemIndice}" title="Eliminar este producto">
                                 <span class="material-symbols-outlined text-lg">delete</span>
                                 <span class="text-xs">Eliminar</span>
-                            </button>
+                            </button>`;
+                        }
+                        productoRow.innerHTML = `
+                            <span class="font-medium text-slate-800">${nombreProducto} <span class="text-slate-500">x${cantidad}</span></span>
+                            ${btnEliminar}
                         `;
                         productosContainer.appendChild(productoRow);
                     });
@@ -940,6 +947,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Encontrar el pedido
             const pedido = pedidosActivosMultiples.find(p => p.codigo === codigo);
             if (!pedido) return;
+
+            // Verificar estado del pedido
+            const estadoPedido = obtenerEstadoPedido(pedido?.etaIso)?.texto || '';
+            if (estadoPedido !== 'EN PREPARACION') {
+                mostrarNotificacion('Solo puedes eliminar productos cuando el pedido está en preparación.', 'info');
+                return;
+            }
 
             // Mostrar modal de confirmación personalizado
             const confirmado = await mostrarConfirmacionCustom(
