@@ -78,6 +78,33 @@ document.addEventListener('DOMContentLoaded', async () => {
         const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
         return isLocalHost ? 'http://localhost:8787' : DEFAULT_PREMIUM_BACKEND_URL;
     })();
+
+    function obtenerBackendsPremium() {
+        const urls = [PREMIUM_BACKEND_URL, DEFAULT_PREMIUM_BACKEND_URL].filter(Boolean);
+        const unicos = [];
+        urls.forEach((u) => {
+            const clean = String(u).replace(/\/$/, '');
+            if (!unicos.includes(clean)) unicos.push(clean);
+        });
+        return unicos;
+    }
+
+    async function fetchPremiumBackend(path, options = {}) {
+        const candidatos = obtenerBackendsPremium();
+        let ultimoError = null;
+
+        for (const baseUrl of candidatos) {
+            try {
+                const response = await fetch(`${baseUrl}${path}`, options);
+                return response;
+            } catch (error) {
+                ultimoError = error;
+                continue;
+            }
+        }
+
+        throw ultimoError || new Error('No se pudo conectar con backend premium');
+    }
     const INVENTARIO_CACHE_KEY = 'vitalMarketInventarioCache';
     const PEDIDO_SEGUIMIENTO_KEY = 'vitalMarketPedidoSeguimiento';
     const BASE_TRACKING_LAT = 4.682657958446985;
@@ -381,7 +408,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Si es admin panel, siempre premium y panel habilitado
             if (sesion.email && sesion.email === 'drogueria.bosa@gmail.com') {
                 premiumActivo = true;
-                premiumUntil = '';
+                premiumUntil = '2099-12-31T23:59:59Z'; // Fecha lejana
                 panelFarmaciaAutenticado = true;
                 window.panelFarmaciaAutenticado = true;
                 localStorage.setItem('vitalMarketPanelAuth', 'true');
@@ -1108,7 +1135,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     async function validarCredencialesPanelEnBackend(email, password) {
-        const response = await fetch(`${PREMIUM_BACKEND_URL}/api/panel/login`, {
+        const response = await fetchPremiumBackend('/api/panel/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
@@ -1379,16 +1406,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                     badge.title = `Vence: ${new Date(premiumUntil).toLocaleDateString()}`;
                 }
                 body.classList.add('premium-theme');
+                if (premiumBenefits) premiumBenefits.classList.add('hidden');
+                if (basicBenefits) basicBenefits.classList.add('hidden');
             } else {
                 badge.innerText = 'PLAN BASICO';
                 badge.className = 'bg-slate-400 text-white text-[10px] font-black px-2 py-0.5 rounded-full';
                 badge.title = '';
                 body.classList.remove('premium-theme');
+                if (premiumBenefits) premiumBenefits.classList.add('hidden');
+                if (basicBenefits) basicBenefits.classList.remove('hidden');
             }
         }
-
-        if (premiumBenefits) premiumBenefits.classList.toggle('hidden', !premiumActivo);
-        if (basicBenefits) basicBenefits.classList.toggle('hidden', premiumActivo);
 
         if (upgradeBtn) {
             if (premiumActivo) {
@@ -1421,7 +1449,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function crearIntentoPremium() {
         const userId = obtenerPremiumUserId();
-        const response = await fetch(`${PREMIUM_BACKEND_URL}/api/premium/create-intent`, {
+        const response = await fetchPremiumBackend('/api/premium/create-intent', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId })
@@ -1449,7 +1477,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function confirmarPremiumConBackend(transactionId) {
         const userId = obtenerPremiumUserId();
-        const response = await fetch(`${PREMIUM_BACKEND_URL}/api/premium/confirm`, {
+        const response = await fetchPremiumBackend('/api/premium/confirm', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ transactionId, userId })
@@ -1488,7 +1516,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function activarPremiumModoPrueba() {
         const userId = obtenerPremiumUserId();
-        const response = await fetch(`${PREMIUM_BACKEND_URL}/api/premium/dev-activate`, {
+        const response = await fetchPremiumBackend('/api/premium/dev-activate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId })
@@ -1521,6 +1549,26 @@ document.addEventListener('DOMContentLoaded', async () => {
         mostrarNotificacion('Premium de prueba activado', 'success');
     }
 
+    async function activarPremiumLocalSinBackend() {
+        const now = new Date();
+        const premiumUntilDate = new Date(now.getTime() + (30 * 24 * 60 * 60 * 1000));
+        premiumActivo = true;
+        premiumUntil = premiumUntilDate.toISOString();
+
+        if (database && clienteSesion?.uid) {
+            await database.ref(`clientesPerfil/${clienteSesion.uid}`).update({
+                premiumActivo: true,
+                premiumUntil,
+                premiumSource: 'local-fallback',
+                actualizadoIso: now.toISOString()
+            });
+        }
+
+        actualizarEstadoPremiumUI();
+        cerrarModalPremium();
+        mostrarNotificacion('Premium activado en modo local (sin backend)', 'success');
+    }
+
     async function leerPremiumDesdeFirebaseCliente() {
         if (!database) return null;
 
@@ -1537,7 +1585,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function leerPremiumDesdeBackend() {
         try {
             const userId = obtenerPremiumUserId();
-            const response = await fetch(`${PREMIUM_BACKEND_URL}/api/premium/status/${encodeURIComponent(userId)}`);
+            const response = await fetchPremiumBackend(`/api/premium/status/${encodeURIComponent(userId)}`);
             if (!response.ok) return null;
             return response.json();
         } catch (_error) {
@@ -1606,19 +1654,65 @@ document.addEventListener('DOMContentLoaded', async () => {
                     return;
                 }
 
-                if (transaction?.status !== 'APPROVED') {
-                    mostrarNotificacion(`Estado de pago: ${transaction.status || 'PENDIENTE'}`, 'info');
-                    return;
-                }
-
                 try {
+                    // Algunos medios como Nequi pueden quedar en PENDING unos segundos.
+                    if (transaction?.status && transaction.status !== 'APPROVED') {
+                        mostrarNotificacion(`Pago en estado ${transaction.status}. Esperando confirmacion...`, 'info');
+                        let confirmado = false;
+
+                        for (let intento = 0; intento < 12; intento += 1) {
+                            try {
+                                await confirmarPremiumConBackend(transaction.id);
+                                confirmado = true;
+                                break;
+                            } catch (e) {
+                                const msg = String(e?.message || '').toUpperCase();
+                                const estadoPendiente = msg.includes('PENDING');
+                                const estadoRechazado =
+                                    msg.includes('DECLINED') ||
+                                    msg.includes('VOIDED') ||
+                                    msg.includes('ERROR') ||
+                                    msg.includes('FAILED') ||
+                                    msg.includes('CANCELLED') ||
+                                    msg.includes('CANCELED');
+
+                                if (estadoRechazado) {
+                                    throw e;
+                                }
+
+                                if (!estadoPendiente) throw e;
+                            }
+                            await new Promise((resolve) => setTimeout(resolve, 5000));
+                        }
+
+                        if (!confirmado) {
+                            mostrarNotificacion('Pago pendiente. Espera unos segundos y vuelve a abrir la app para sincronizar premium.', 'info');
+                            return;
+                        }
+                        return;
+                    }
+
                     await confirmarPremiumConBackend(transaction.id);
                 } catch (error) {
-                    mostrarNotificacion('Error confirmando pago en backend', 'info');
+                    const mensaje = error?.message || 'Error confirmando pago en backend';
+                    mostrarNotificacion(mensaje, 'info');
                     console.error(error);
                 }
             });
         } catch (error) {
+            const errorMsg = String(error?.message || '');
+            const esLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            const esErrorConexion = /failed to fetch|networkerror|cors|blocked by cors/i.test(errorMsg);
+
+            if (esLocalHost && esErrorConexion) {
+                try {
+                    await activarPremiumLocalSinBackend();
+                    return;
+                } catch (fallbackError) {
+                    console.error('Error activando fallback local premium:', fallbackError);
+                }
+            }
+
             const msg = error?.message || 'No se pudo iniciar el pago real. Revisa backend/llaves.';
             mostrarNotificacion(msg, 'info');
             console.error(error);
@@ -1753,14 +1847,81 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ============================================
     // 5. FUNCIONES DE ACTUALIZACION DE UI
     // ============================================
+
     function actualizarInterfazCompleta() {
         actualizarProductosRapidos();
         actualizarListaProductos();
-        actualizarInventarioCompleto();
         actualizarDashboard();
         actualizarStockCritico();
         evaluarVencimientos();
         evaluarAlertasStock();
+        renderizarInventarioPanel();
+    }
+
+    // Renderiza el inventario en el panel (div#inventario-completo)
+    function renderizarInventarioPanel() {
+        const container = document.getElementById('inventario-completo');
+        if (!container) return;
+
+        const filtro = (document.getElementById('buscar-inventario-panel')?.value || '').toLowerCase().trim();
+
+        const productos = Object.entries(inventarioActual).map(([id, prod]) => ({
+            id,
+            ...prod
+        })).filter((prod) => {
+            if (!filtro) return true;
+            const nombre = String(prod.nombre || '').toLowerCase();
+            const categoria = String(prod.categoria || '').toLowerCase();
+            return nombre.includes(filtro) || categoria.includes(filtro);
+        });
+
+        // Ordenar por nombre
+        productos.sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''));
+
+        if (productos.length === 0) {
+            container.innerHTML = '<div class="col-span-full bg-white rounded-xl border border-slate-200 p-4 text-sm text-slate-500">No hay productos en el inventario.</div>';
+            return;
+        }
+
+        container.innerHTML = productos.map(prod => {
+            const id = prod.id;
+            const fechaVence = prod.vence || '';
+            const semaforo = obtenerSemaforoStock(prod.stock);
+            const imagenUrl = resolverImagenProducto(prod);
+            return `
+            <div class="bg-white rounded-2xl p-3 border-t-4 ${semaforo.colorBorde} shadow-sm">
+                <img src="${imagenUrl}" alt="${prod.nombre}" loading="lazy" onerror="this.onerror=null;this.src='${IMAGEN_PLACEHOLDER}'" class="w-full h-24 rounded-lg object-contain bg-white border border-slate-200 mb-2 p-1">
+                <h3 class="font-bold text-slate-800 text-sm leading-tight line-clamp-2 min-h-[2.25rem]">${prod.nombre}</h3>
+                <p class="text-[10px] text-slate-500 mt-0.5 capitalize">${prod.categoria || 'medicamento'}</p>
+                <div class="flex items-center justify-between mt-1">
+                    <p class="text-xs font-black text-primary">$${prod.precio.toLocaleString()}</p>
+                    <span class="text-[9px] px-1.5 py-0.5 rounded-full font-bold ${semaforo.colorFondo}">${semaforo.etiqueta}</span>
+                </div>
+                <p class="text-[11px] font-bold ${semaforo.colorTexto} mt-1">Stock: ${prod.stock}</p>
+                <p class="text-[11px] text-slate-500 mt-1">Vence: ${fechaVence || '—'}</p>
+
+                <div class="mt-2 flex gap-2">
+                    <input
+                        type="number"
+                        id="numero-stock-${id}"
+                        min="0"
+                        step="1"
+                        value="${prod.stock}"
+                        class="flex-1 border border-slate-300 rounded-lg px-2 py-1.5 text-sm font-bold text-slate-700">
+                    <button onclick="window.confirmarStockManual('${id}')" class="bg-primary text-white px-3 py-1.5 rounded-lg font-bold hover:bg-[#004488] transition text-sm">OK</button>
+                </div>
+
+                <div class="mt-2 flex gap-2">
+                    <input type="date" id="vence-${id}" value="${fechaVence}" class="flex-1 border border-slate-300 rounded-lg px-2 py-1.5 text-sm">
+                    <button onclick="window.actualizarVencimiento('${id}')" class="bg-primary text-white px-3 py-1.5 rounded-lg font-bold hover:bg-[#004488] transition text-sm">Guardar</button>
+                </div>
+
+                <button onclick="window.eliminarProductoDesdePanel('${id}')" class="w-full mt-2 bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg font-bold transition text-sm">
+                    Eliminar Producto
+                </button>
+            </div>
+            `;
+        }).join('');
     }
 
     function actualizarProductosRapidos() {
@@ -1824,78 +1985,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             const dias = diasHastaVencimiento(p.vence);
             return dias === null || dias >= 0;
         });
-// Evento para buscar en botiquín
-// Lógica para mostrar métodos de pago al pulsar Probar Premium
-const btnProbarPremium = document.getElementById('probar-premium-btn');
-if (btnProbarPremium) {
-    btnProbarPremium.addEventListener('click', () => {
-        if (!clienteSesion?.uid) {
-            mostrarNotificacion('Debes iniciar sesión para activar premium', 'info');
-            abrirModalAccesoCliente();
-            return;
-        }
-        document.getElementById('modal-metodos-pago')?.classList.remove('hidden');
-    });
-}
-
-document.getElementById('cerrar-modal-pago')?.addEventListener('click', () => {
-    document.getElementById('modal-metodos-pago')?.classList.add('hidden');
-});
-
-// Simulación de pago (pruebas)
-document.getElementById('pago-dev')?.addEventListener('click', async () => {
-    if (!clienteSesion?.uid) {
-        mostrarNotificacion('Debes iniciar sesión para activar premium', 'info');
-        return;
-    }
-    try {
-        const resp = await fetch(`${PREMIUM_BACKEND_URL}/api/premium/dev-activate`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: clienteSesion.uid })
-        });
-        const data = await resp.json();
-        if (data.ok && data.approved) {
-            localStorage.setItem('vitalMarketPremium', 'true');
-            localStorage.setItem('vitalMarketPremiumUntil', data.premiumUntil);
-            premiumActivo = true;
-            premiumUntil = data.premiumUntil;
-            actualizarEstadoPremiumUI && actualizarEstadoPremiumUI();
-            mostrarNotificacion('¡Ahora eres usuario Premium!', 'success');
-            document.getElementById('modal-metodos-pago')?.classList.add('hidden');
-        } else {
-            mostrarNotificacion('No se pudo activar premium', 'error');
-        }
-    } catch (e) {
-        mostrarNotificacion('Error al activar premium', 'error');
-    }
-});
-
-// Pago real con Wompi (redirección o widget)
-document.getElementById('pago-wompi')?.addEventListener('click', async () => {
-    if (!clienteSesion?.uid) {
-        mostrarNotificacion('Debes iniciar sesión para activar premium', 'info');
-        return;
-    }
-    try {
-        const resp = await fetch(`${PREMIUM_BACKEND_URL}/api/premium/create-intent`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: clienteSesion.uid })
-        });
-        const data = await resp.json();
-        if (data.ok && data.intent && data.intent.redirectUrl) {
-            window.location.href = data.intent.redirectUrl;
-        } else {
-            mostrarNotificacion('No se pudo iniciar el pago', 'error');
-        }
-    } catch (e) {
-        mostrarNotificacion('Error al iniciar pago', 'error');
-    }
-});
-document.getElementById('buscar-botiquin')?.addEventListener('input', () => {
-    actualizarListaProductos();
-});
 
         const orden = document.getElementById('ordenar-productos')?.value || 'nombre';
         if (orden === 'precio-menor') {
@@ -1920,50 +2009,36 @@ document.getElementById('buscar-botiquin')?.addEventListener('input', () => {
         if (productosVisibles) productosVisibles.textContent = filtrados.length;
 
         container.innerHTML = filtrados.map(prod => {
+            const fechaVence = prod.vence || '';
             const semaforo = obtenerSemaforoStock(prod.stock);
             const imagenUrl = resolverImagenProducto(prod);
             return `
-            <div class="bg-white rounded-2xl p-3 border-t-4 ${semaforo.colorBorde} shadow-sm product-card">
-                <img src="${imagenUrl}" alt="${prod.nombre}" data-img-src="${imagenUrl}" data-img-name="${prod.nombre}" loading="lazy" onerror="this.onerror=null;this.src='${IMAGEN_PLACEHOLDER}'" class="producto-imagen-click cursor-zoom-in w-full h-28 rounded-xl object-contain bg-white border border-slate-200 p-1 mb-2">
-                <h3 class="font-bold text-slate-800 text-sm leading-tight line-clamp-2 min-h-[2.25rem]">${prod.nombre}</h3>
-                <p class="text-[10px] text-slate-500 mt-0.5 capitalize">${prod.categoria || 'medicamento'}</p>
-                <div class="flex items-center justify-between mt-1">
-                    <p class="text-xs font-black text-primary">$${prod.precio.toLocaleString()}</p>
-                    <span class="text-[9px] px-1.5 py-0.5 rounded-full font-bold ${semaforo.colorFondo}">${semaforo.etiqueta}</span>
+            <div class="bg-white rounded-2xl p-3 md:p-4 border border-slate-200 shadow-sm product-card">
+                <div class="w-full h-36 rounded-xl bg-slate-100 border border-slate-200 shadow-inner flex items-center justify-center mb-3 overflow-hidden">
+                    <img src="${imagenUrl}" alt="${prod.nombre}" data-img-src="${imagenUrl}" data-img-name="${prod.nombre}" loading="lazy" onerror="this.onerror=null;this.src='${IMAGEN_PLACEHOLDER}'" class="producto-imagen-click cursor-zoom-in w-full h-full object-contain p-2">
                 </div>
-                <p class="text-[11px] font-bold ${semaforo.colorTexto} mt-1">Stock: ${prod.stock}</p>
-                <div class="grid grid-cols-2 gap-1.5 mt-2">
-                    <button onclick="agregarAlCarrito('${prod.id}')" class="bg-primary text-white font-bold py-1.5 rounded-lg text-[11px] shadow-sm hover:bg-[#004488] transition flex items-center justify-center gap-1">
-                        <span class="material-symbols-outlined text-xs">add</span> Agregar
+                <h3 class="font-black text-slate-800 text-3 leading-tight line-clamp-2 min-h-[2.5rem]">${prod.nombre}</h3>
+                <p class="text-xs text-slate-500 mt-1 capitalize">${prod.categoria || 'medicamento'}</p>
+                <div class="flex items-center justify-between mt-1.5">
+                    <p class="text-lg font-black text-primary">$${prod.precio.toLocaleString()}</p>
+                    <span class="text-[11px] px-2 py-0.5 rounded-full font-black ${semaforo.colorFondo}">${semaforo.etiqueta}</span>
+                </div>
+                <p class="text-base font-black ${semaforo.colorTexto} mt-1">Stock: ${prod.stock}</p>
+                <p class="text-sm text-slate-500 mt-0.5">Vence: ${fechaVence || '—'}</p>
+                <div class="grid grid-cols-2 gap-2 mt-3">
+                    <button onclick="window.agregarAlCarrito('${prod.id}')" class="bg-primary text-white font-bold py-2 rounded-lg text-sm shadow-sm hover:bg-[#004488] transition flex items-center justify-center gap-1">
+                        <span class="material-symbols-outlined text-base">add_shopping_cart</span>
+                        Agregar
                     </button>
-                    <button onclick="verDetallesProducto('${prod.id}')" class="bg-slate-50 text-primary font-bold py-1.5 rounded-lg text-[11px] border border-slate-200 hover:bg-slate-100 transition">
+                    <button onclick="window.verDetallesProducto('${prod.id}')" class="bg-slate-50 text-primary font-bold py-2 rounded-lg text-sm border border-slate-200 hover:bg-slate-100 transition">
                         Ver detalles
-                        <div class="flex gap-2">
-                            <input
-                                type="number"
-                                id="numero-stock-${id}"
-                                min="0"
-                                step="1"
-                                value="${prod.stock}"
-                                placeholder="Stock"
-                                class="flex-1 border border-slate-300 rounded-lg px-2 py-2 text-sm font-bold text-slate-700">
-                            <button onclick="confirmarStockManual('${id}')" class="bg-primary text-white px-4 py-2 rounded-lg font-bold hover:bg-[#004488] transition text-sm">OK</button>
-                        </div>
-                        
-                        <div class="flex gap-2">
-                            <input type="date" id="vence-${id}" value="${fechaVence}" class="flex-1 border border-slate-300 rounded-lg px-2 py-2 text-sm">
-                            <button onclick="actualizarVencimiento('${id}')" class="bg-primary text-white px-4 py-2 rounded-lg font-bold hover:bg-[#004488] transition text-sm">Guardar</button>
-                        </div>
-                        
-                        <button onclick="eliminarProducto('${id}')" class="w-full bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-bold transition text-sm">
-                            🗑️ Eliminar Producto
-                        </button>
-                    </div>
+                    </button>
                 </div>
+            </div>
             `;
         }).join('');
 
-        if (productos.length === 0) {
+        if (filtrados.length === 0) {
             container.innerHTML = '<div class="col-span-full bg-white rounded-xl border border-slate-200 p-4 text-sm text-slate-500">No se encontraron productos con esa busqueda.</div>';
         }
     }
@@ -2653,6 +2728,10 @@ document.getElementById('buscar-botiquin')?.addEventListener('input', () => {
         }
     };
 
+    window.eliminarProductoDesdePanel = async function(productoId) {
+        await eliminarProducto(productoId);
+    };
+
     window.subirImagenProducto = async function(productoId, inputElement) {
         const producto = inventarioActual[productoId];
         if (!producto || !inputElement.files.length) return;
@@ -2971,6 +3050,10 @@ document.getElementById('buscar-botiquin')?.addEventListener('input', () => {
             actualizarListaProductos();
         });
 
+        document.getElementById('buscar-botiquin')?.addEventListener('input', () => {
+            actualizarListaProductos();
+        });
+
         document.querySelectorAll('.filtro-categoria').forEach(btn => {
             btn.addEventListener('click', () => {
                 categoriaFiltro = btn.dataset.categoria;
@@ -2979,7 +3062,75 @@ document.getElementById('buscar-botiquin')?.addEventListener('input', () => {
         });
 
         document.getElementById('buscar-inventario-panel')?.addEventListener('input', () => {
-            actualizarInventarioCompleto();
+            renderizarInventarioPanel();
+        });
+
+        document.getElementById('probar-premium-btn')?.addEventListener('click', () => {
+            if (!clienteSesion?.uid) {
+                mostrarNotificacion('Debes iniciar sesion para activar premium', 'info');
+                abrirModalAccesoCliente();
+                return;
+            }
+            document.getElementById('modal-metodos-pago')?.classList.remove('hidden');
+        });
+
+        document.getElementById('cerrar-modal-pago')?.addEventListener('click', () => {
+            document.getElementById('modal-metodos-pago')?.classList.add('hidden');
+        });
+
+        document.getElementById('pago-dev')?.addEventListener('click', async () => {
+            if (!clienteSesion?.uid) {
+                mostrarNotificacion('Debes iniciar sesion para activar premium', 'info');
+                return;
+            }
+            try {
+                const resp = await fetchPremiumBackend('/api/premium/dev-activate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: clienteSesion.uid })
+                });
+                const data = await resp.json();
+                if (data.ok && data.approved) {
+                    localStorage.setItem('vitalMarketPremium', 'true');
+                    localStorage.setItem('vitalMarketPremiumUntil', data.premiumUntil);
+                    premiumActivo = true;
+                    premiumUntil = data.premiumUntil;
+                    actualizarEstadoPremiumUI && actualizarEstadoPremiumUI();
+                    mostrarNotificacion('Ahora eres usuario Premium', 'success');
+                    document.getElementById('modal-metodos-pago')?.classList.add('hidden');
+                } else {
+                    mostrarNotificacion('No se pudo activar premium', 'error');
+                }
+            } catch (_e) {
+                try {
+                    await activarPremiumLocalSinBackend();
+                    document.getElementById('modal-metodos-pago')?.classList.add('hidden');
+                } catch (_fallbackError) {
+                    mostrarNotificacion('Error al activar premium', 'error');
+                }
+            }
+        });
+
+        document.getElementById('pago-wompi')?.addEventListener('click', async () => {
+            if (!clienteSesion?.uid) {
+                mostrarNotificacion('Debes iniciar sesion para activar premium', 'info');
+                return;
+            }
+            try {
+                const resp = await fetchPremiumBackend('/api/premium/create-intent', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: clienteSesion.uid })
+                });
+                const data = await resp.json();
+                if (data.ok && data.intent && data.intent.redirectUrl) {
+                    window.location.href = data.intent.redirectUrl;
+                } else {
+                    mostrarNotificacion('No se pudo iniciar el pago', 'error');
+                }
+            } catch (_e) {
+                mostrarNotificacion('Error al iniciar pago', 'error');
+            }
         });
 
         document.getElementById('btn-ver-criticos')?.addEventListener('click', () => {
@@ -3015,10 +3166,6 @@ document.getElementById('buscar-botiquin')?.addEventListener('input', () => {
             if (event.target.id === 'modal-exportar') {
                 document.getElementById('modal-exportar')?.classList.add('hidden');
             }
-        });
-        document.getElementById('btn-imprimir-pagina')?.addEventListener('click', () => {
-            document.getElementById('modal-exportar')?.classList.add('hidden');
-            window.print();
         });
         document.getElementById('btn-exportar-pdf-modal')?.addEventListener('click', () => {
             document.getElementById('modal-exportar')?.classList.add('hidden');

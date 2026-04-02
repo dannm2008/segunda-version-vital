@@ -17,7 +17,33 @@ const panelLoginAttempts = new Map();
 const PANEL_MAX_ATTEMPTS = Number(process.env.PANEL_MAX_ATTEMPTS || 5);
 const PANEL_LOCK_MINUTES = Number(process.env.PANEL_LOCK_MINUTES || 10);
 
-app.use(cors({ origin: FRONTEND_ORIGIN }));
+function parseAllowedOrigins(rawOrigins) {
+  const raw = String(rawOrigins || '*').trim();
+  if (!raw) return ['*'];
+  return raw
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+}
+
+const allowedOrigins = parseAllowedOrigins(FRONTEND_ORIGIN);
+
+app.use(cors({
+  origin(origin, callback) {
+    // Permite herramientas/server-to-server sin cabecera Origin.
+    if (!origin) {
+      callback(null, true);
+      return;
+    }
+
+    if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+
+    callback(new Error(`Origin no permitido por CORS: ${origin}`));
+  }
+}));
 app.use(express.json());
 
 const intentStore = new Map();
