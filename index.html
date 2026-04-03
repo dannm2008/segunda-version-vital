@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Vital Market - Bosa Brasilia</title>
     
     <!-- Tailwind CSS -->
@@ -742,14 +742,14 @@
                     </button>
                 </div>
 
-            <div class="px-4 py-2 flex justify-between items-center">
+            <div class="px-4 py-2 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                 <p class="text-lg font-bold text-accent"><span id="productos-visibles">10</span> productos disponibles</p>
-                <div class="flex items-center gap-2">
-                    <div class="relative">
-                        <input id="buscar-botiquin" type="text" placeholder="Buscar..." class="pl-8 pr-2 py-1 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+                <div class="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+                    <div class="relative w-full sm:w-auto">
+                        <input id="buscar-botiquin" type="text" placeholder="Buscar..." class="w-full sm:w-auto min-w-0 pl-8 pr-2 py-1 rounded-lg border border-slate-300 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
                         <span class="material-symbols-outlined absolute left-1 top-1.5 text-slate-400">search</span>
                     </div>
-                    <select id="ordenar-productos" class="text-xs border rounded-lg p-1">
+                    <select id="ordenar-productos" class="w-full sm:w-auto text-sm sm:text-xs border rounded-lg p-2 sm:p-1">
                         <option value="nombre">Ordenar por nombre</option>
                         <option value="precio-menor">Menor precio</option>
                         <option value="precio-mayor">Mayor precio</option>
@@ -757,7 +757,7 @@
                 </div>
             </div>
 
-            <div class="p-4 grid grid-cols-2 gap-3" id="lista-productos">
+            <div class="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" id="lista-productos">
                 <!-- Productos cargados dinámicamente -->
             </div>
 
@@ -1159,7 +1159,7 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 <script src="https://checkout.wompi.co/widget.js"></script>
-<script src="app.js?v=20260403-04"></script>
+<script src="app.js?v=20260403-05"></script>
 
 </body>
 </html>
