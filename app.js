@@ -589,7 +589,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             await validarCredencialesPanelEnBackend(email, password);
             panelFarmaciaAutenticado = true;
             localStorage.setItem('vitalMarketPanelAuth', 'true');
+            premiumActivo = true;
+            premiumUntil = '2099-12-31T23:59:59Z';
             actualizarEstadoAccesoPanelUI();
+            actualizarEstadoPremiumUI();
             cerrarModalAccesoCliente();
             mostrarNotificacion('Acceso de administrador habilitado', 'success');
             cambiarPantalla('panel');
@@ -1159,6 +1162,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     function cerrarSesionPanel() {
         panelFarmaciaAutenticado = false;
         localStorage.removeItem('vitalMarketPanelAuth');
+        if (!auth?.currentUser) {
+            premiumActivo = false;
+            premiumUntil = '';
+            actualizarEstadoPremiumUI();
+        }
         actualizarEstadoAccesoPanelUI();
         mostrarNotificacion('Sesion de panel cerrada', 'info');
         cambiarPantalla('home');
@@ -1396,10 +1404,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         const basicBenefits = document.getElementById('basic-benefits');
         const upgradeBtn = document.getElementById('upgrade-premium-btn');
         const body = document.body;
+        const premiumVisible = Boolean(premiumActivo) && (Boolean(clienteSesion) || Boolean(panelFarmaciaAutenticado));
 
         if (badge) {
-            // Solo mostrar 'MIEMBRO PREMIUM' si hay usuario logueado y premiumActivo
-            if (premiumActivo && clienteSesion) {
+            // Mostrar premium para cliente premium o admin autenticado en panel.
+            if (premiumVisible) {
                 badge.innerText = 'MIEMBRO PREMIUM';
                 badge.className = 'bg-accent text-primary text-[10px] font-black px-2 py-0.5 rounded-full';
                 if (premiumUntil) {
@@ -3244,6 +3253,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     cargarNotificacionesPersistidas();
     cargarEntregadosNotificados();
     await sincronizarEstadoPremium();
+    if (panelFarmaciaAutenticado && !premiumActivo) {
+        premiumActivo = true;
+        premiumUntil = '2099-12-31T23:59:59Z';
+    }
     actualizarEstadoSesionClienteUI();
     iniciarEscuchaSesionCliente();
     actualizarEstadoAccesoPanelUI();
