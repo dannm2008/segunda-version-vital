@@ -111,6 +111,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         throw ultimoError || new Error('No se pudo conectar con backend premium');
     }
     const INVENTARIO_CACHE_KEY = 'vitalMarketInventarioCache';
+    const INVENTARIO_CACHE_VERSION_KEY = 'vitalMarketInventarioCacheVersion';
+    const INVENTARIO_CACHE_VERSION = '2026-04-03';
     const PEDIDO_SEGUIMIENTO_KEY = 'vitalMarketPedidoSeguimiento';
     const BASE_TRACKING_LAT = 4.682657958446985;
     const BASE_TRACKING_LNG = -74.05669582712905;
@@ -1298,6 +1300,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function cargarInventarioCacheLocal() {
         try {
+            const versionGuardada = localStorage.getItem(INVENTARIO_CACHE_VERSION_KEY);
+            if (versionGuardada !== INVENTARIO_CACHE_VERSION) {
+                localStorage.removeItem(INVENTARIO_CACHE_KEY);
+                localStorage.setItem(INVENTARIO_CACHE_VERSION_KEY, INVENTARIO_CACHE_VERSION);
+                return null;
+            }
+
             const raw = localStorage.getItem(INVENTARIO_CACHE_KEY);
             if (!raw) return null;
             const parsed = JSON.parse(raw);
@@ -1312,6 +1321,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function guardarInventarioCacheLocal(data) {
         try {
+            localStorage.setItem(INVENTARIO_CACHE_VERSION_KEY, INVENTARIO_CACHE_VERSION);
             localStorage.setItem(INVENTARIO_CACHE_KEY, JSON.stringify(data));
             console.log('💾 Cache local guardado: ' + Object.keys(data || {}).length + ' productos');
         } catch (error) {
@@ -3284,6 +3294,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ============================================
     // 14. INICIAR APLICACION
     // ============================================
+    // Evita que autofill del navegador deje filtros activos al abrir en mobile.
+    const buscarBotiquinInput = document.getElementById('buscar-botiquin');
+    if (buscarBotiquinInput) buscarBotiquinInput.value = '';
+    const buscarProductosInput = document.getElementById('buscar-productos');
+    if (buscarProductosInput) buscarProductosInput.value = '';
+
     await cargarDatos();
     inicializarEventos();
     cargarNotificacionesPersistidas();
