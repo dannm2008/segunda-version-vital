@@ -36,6 +36,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             auth = typeof firebase.auth === 'function' ? firebase.auth() : null;
             firebaseInicializado = true;
             console.log('Conexion a Database establecida');
+            
+            // Detectar problemas de conexión en mobile
+            if (navigator.onLine === false) {
+                console.warn('⚠️ Dispositivo OFFLINE - usando cache local');
+            }
         } else {
             console.warn('Firebase no cargado, usando datos locales');
         }
@@ -1297,8 +1302,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (!raw) return null;
             const parsed = JSON.parse(raw);
             if (!parsed || typeof parsed !== 'object') return null;
+            console.log('📦 Cache local encontrado: ' + Object.keys(parsed).length + ' productos');
             return parsed;
         } catch (_error) {
+            console.error('❌ Error al leer cache local:', _error.message);
             return null;
         }
     }
@@ -1306,8 +1313,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     function guardarInventarioCacheLocal(data) {
         try {
             localStorage.setItem(INVENTARIO_CACHE_KEY, JSON.stringify(data));
+            console.log('💾 Cache local guardado: ' + Object.keys(data || {}).length + ' productos');
         } catch (error) {
-            console.warn('No se pudo guardar cache local de inventario:', error?.message || error);
+            console.error('❌ No se pudo guardar en localStorage:', error?.message || error);
         }
     }
 
@@ -1731,10 +1739,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ============================================
     // 3. FUNCION PARA CARGAR DATOS DESDE FIREBASE
     // ============================================
+    // Función auxiliar: cargar con timeout
+    async function cargarDatosConTimeout(timeoutMs = 5000) {
+        return Promise.race([
+            database.ref('inventario').once('value'),
+            new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Firebase timeout')), timeoutMs)
+            )
+        ]);
+    }
+
     async function cargarDatos() {
         if (firebaseInicializado && database) {
             try {
-                const snapshotInventario = await database.ref('inventario').once('value');
+                console.log('📡 Intentando cargar datos desde Firebase...');
+                
+                // Cargar con timeout (5 segundos máx)
+                const snapshotInventario = await cargarDatosConTimeout(5000);
                 const dataInventario = snapshotInventario.val();
                 const snapshotRaiz = await database.ref().once('value');
                 const dataRaiz = snapshotRaiz.val() || {};
@@ -1743,14 +1764,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                     inventarioActual = normalizarInventario(dataInventario);
                     await completarImagenesCatalogoSiFaltan();
                     guardarInventarioCacheLocal(inventarioActual);
-                    console.log('Datos cargados desde Firebase');
+                    console.log('✅ Datos cargados desde Firebase (' + Object.keys(inventarioActual).length + ' productos)');
 
                     // Si todavia existen llaves legacy en raiz, las migra y limpia.
                     await migrarInventarioLegacySiExiste(dataRaiz, inventarioActual);
                 } else {
                     const cacheLocal = cargarInventarioCacheLocal();
-                    inventarioActual = normalizarInventario(cacheLocal || datosLocales.inventario);
-                    console.warn('No se encontro inventario en Firebase; se muestran datos locales/cache sin sobrescribir la nube');
+                    const datos = cacheLocal || datosLocales.inventario;
+                    inventarioActual = normalizarInventario(datos);
+                    console.warn('⚠️ Firebase vacío; usando cache/default (' + Object.keys(inventarioActual).length + ' productos)');
+
+                    // Guardar como fallback en localStorage
+                    guardarInventarioCacheLocal(inventarioActual);
 
                     // Si la raiz tenia formato legacy sin inventario, migra a la estructura nueva.
                     if (tieneLlavesLegacyEnRaiz(dataRaiz)) {
@@ -1761,9 +1786,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                     await completarImagenesCatalogoSiFaltan();
                 }
             } catch (error) {
-                console.error('Error al cargar desde Firebase:', error);
+                console.error('❌ Error Firebase:', error.message);
+                console.log('📦 Usando fallback: cache local o datos por defecto');
+                
                 const cacheLocal = cargarInventarioCacheLocal();
-                inventarioActual = normalizarInventario(cacheLocal || datosLocales.inventario);
+                const datos = cacheLocal || datosLocales.inventario;
+                inventarioActual = normalizarInventario(datos);
+                console.log('✓ Fallback cargado (' + Object.keys(inventarioActual).length + ' productos)');
+                
+                // Garantizar que localStorage esté actualizado
+                guardarInventarioCacheLocal(inventarioActual);
                 await completarImagenesCatalogoSiFaltan();
             }
 
@@ -1780,10 +1812,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
             }
         } else {
+            console.log('🔌 Firebase no inicializado; usando cache local');
             const cacheLocal = cargarInventarioCacheLocal();
-            inventarioActual = normalizarInventario(cacheLocal || datosLocales.inventario);
+            const datos = cacheLocal || datosLocales.inventario;
+            inventarioActual = normalizarInventario(datos);
+            console.log('✓ Cache/default cargado (' + Object.keys(inventarioActual).length + ' productos)');
             await completarImagenesCatalogoSiFaltan();
-            console.log('Usando datos locales/cache');
         }
 
         actualizarInterfazCompleta();
@@ -1989,6 +2023,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (categoriaActual !== 'todos') {
             filtrados = filtrados.filter(p => p.categoria === categoriaActual);
         }
+        
         // Filtrar productos vencidos
         filtrados = filtrados.filter(p => {
             const dias = diasHastaVencimiento(p.vence);
@@ -2021,6 +2056,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const fechaVence = prod.vence || '';
             const semaforo = obtenerSemaforoStock(prod.stock);
             const imagenUrl = resolverImagenProducto(prod);
+            const sinStock = Number(prod.stock) <= 0;
             return `
             <div class="bg-white rounded-2xl p-3 md:p-4 border border-slate-200 shadow-sm product-card">
                 <div class="w-full h-36 rounded-xl bg-slate-100 border border-slate-200 shadow-inner flex items-center justify-center mb-3 overflow-hidden">
@@ -2035,9 +2071,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <p class="text-base font-black ${semaforo.colorTexto} mt-1">Stock: ${prod.stock}</p>
                 <p class="text-sm text-slate-500 mt-0.5">Vence: ${fechaVence || '—'}</p>
                 <div class="grid grid-cols-2 gap-2 mt-3">
-                    <button onclick="window.agregarAlCarrito('${prod.id}')" class="bg-primary text-white font-bold py-2 rounded-lg text-sm shadow-sm hover:bg-[#004488] transition flex items-center justify-center gap-1">
+                    <button onclick="window.agregarAlCarrito('${prod.id}')" ${sinStock ? 'disabled' : ''} class="font-bold py-2 rounded-lg text-sm shadow-sm transition flex items-center justify-center gap-1 ${sinStock ? 'bg-slate-200 text-slate-500 cursor-not-allowed' : 'bg-primary text-white hover:bg-[#004488]'}">
                         <span class="material-symbols-outlined text-base">add_shopping_cart</span>
-                        Agregar
+                        ${sinStock ? 'Sin stock' : 'Agregar'}
                     </button>
                     <button onclick="window.verDetallesProducto('${prod.id}')" class="bg-slate-50 text-primary font-bold py-2 rounded-lg text-sm border border-slate-200 hover:bg-slate-100 transition">
                         Ver detalles
@@ -3262,6 +3298,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     actualizarEstadoAccesoPanelUI();
     actualizarTarjetaSeguimiento();
     cambiarPantalla(obtenerPantallaDesdeHash());
+
+    // Detectar cambios de conectividad en mobile y reintentar Firebase
+    window.addEventListener('online', () => {
+        console.log('📡 Dispositivo conectado - sincronizando con Firebase...');
+        cargarDatos().catch(e => console.error('Error al reintentar:', e));
+    });
+
+    window.addEventListener('offline', () => {
+        console.warn('⚠️ Dispositivo OFFLINE - usando cache local');
+    });
 
     console.log('Vital Market listo');
 });
