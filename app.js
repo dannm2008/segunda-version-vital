@@ -54,16 +54,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ============================================
     const datosLocales = {
         inventario: {
-            amoxicilina: { nombre: 'Amoxicilina 500mg', stock: 45, precio: 12500, categoria: 'antibiotico', vence: '2024-12-31', imagen: '' },
-            ibuprofeno: { nombre: 'Ibuprofeno 400mg', stock: 85, precio: 4200, categoria: 'analgesico', vence: '2024-11-30', imagen: '' },
-            paracetamol: { nombre: 'Paracetamol 500mg', stock: 120, precio: 3500, categoria: 'analgesico', vence: '2025-03-15', imagen: '' },
-            lantus: { nombre: 'Insulina Glargina', stock: 8, precio: 45000, categoria: 'insulina', vence: '2025-06-30', imagen: '' },
-            losartan: { nombre: 'Losartan 50mg', stock: 15, precio: 2800, categoria: 'cardiovascular', vence: '2024-10-15', imagen: '' },
-            metformina: { nombre: 'Metformina 850mg', stock: 32, precio: 5500, categoria: 'diabetes', vence: '2025-01-20', imagen: '' },
-            omeprazol: { nombre: 'Omeprazol 20mg', stock: 67, precio: 1800, categoria: 'gastro', vence: '2025-02-28', imagen: '' },
-            salbutamol: { nombre: 'Salbutamol Spray', stock: 12, precio: 12500, categoria: 'respiratorio', vence: '2024-09-30', imagen: '' },
-            enalapril: { nombre: 'Enalapril 10mg', stock: 41, precio: 3200, categoria: 'cardiovascular', vence: '2025-04-15', imagen: '' },
-            atorvastatina: { nombre: 'Atorvastatina 20mg', stock: 28, precio: 8900, categoria: 'cardiovascular', vence: '2025-01-10', imagen: '' }
+            amoxicilina: { nombre: 'Amoxicilina 500mg', stock: 45, precio: 12500, categoria: 'antibiotico', vence: '2027-12-31', imagen: '' },
+            ibuprofeno: { nombre: 'Ibuprofeno 400mg', stock: 85, precio: 4200, categoria: 'analgesico', vence: '2027-11-30', imagen: '' },
+            paracetamol: { nombre: 'Paracetamol 500mg', stock: 120, precio: 3500, categoria: 'analgesico', vence: '2027-10-15', imagen: '' },
+            lantus: { nombre: 'Insulina Glargina', stock: 8, precio: 45000, categoria: 'insulina', vence: '2027-09-30', imagen: '' },
+            losartan: { nombre: 'Losartan 50mg', stock: 15, precio: 2800, categoria: 'cardiovascular', vence: '2027-08-15', imagen: '' },
+            metformina: { nombre: 'Metformina 850mg', stock: 32, precio: 5500, categoria: 'diabetes', vence: '2027-07-20', imagen: '' },
+            omeprazol: { nombre: 'Omeprazol 20mg', stock: 67, precio: 1800, categoria: 'gastro', vence: '2027-06-28', imagen: '' },
+            salbutamol: { nombre: 'Salbutamol Spray', stock: 12, precio: 12500, categoria: 'respiratorio', vence: '2027-05-30', imagen: '' },
+            enalapril: { nombre: 'Enalapril 10mg', stock: 41, precio: 3200, categoria: 'cardiovascular', vence: '2027-04-15', imagen: '' },
+            atorvastatina: { nombre: 'Atorvastatina 20mg', stock: 28, precio: 8900, categoria: 'cardiovascular', vence: '2027-03-10', imagen: '' }
         }
     };
 
