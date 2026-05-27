@@ -2993,44 +2993,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     let categoriaFiltro = 'todos';
 
     // ----------------------
-    // Accessibility widget
+    // Accessibility widget - CORREGIDO
     // ----------------------
-(function initAccessibilityWidget() {
+    (function initAccessibilityWidget() {
         const accessBtn = document.getElementById('access-btn');
         const accessPanel = document.getElementById('access-panel');
         if (!accessBtn || !accessPanel) return;
 
         const contentRoot = document.querySelector('main') || document.body;
 
-        // ESTA FUNCIÓN AHORA SOLO EXISTE, PERO NO SE LLAMA AUTOMÁTICAMENTE AL CARGAR
-        const applyState = () => {
-            // Ya no leemos de localStorage, empezamos siempre en blanco
-            const state = {}; 
-            if (state.fontSize) document.documentElement.style.fontSize = state.fontSize;
-            contentRoot.classList.toggle('a11y-invert', !!state.invert);
-            contentRoot.classList.toggle('a11y-grayscale', !!state.grayscale);
-            contentRoot.classList.toggle('a11y-underline-links', !!state.underline);
-            contentRoot.classList.toggle('a11y-spacing-big', !!state.spacingBig);
-        };
-
-        // IMPORTANTE: Aquí NO llamamos a applyState(); así siempre empieza normal.
+        // Ya no cargamos applyState() al inicio para que siempre empiece normal.
 
         accessBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             const hidden = accessPanel.hasAttribute('hidden');
             if (hidden) accessPanel.removeAttribute('hidden'); else accessPanel.setAttribute('hidden', '');
         });
-        
-        // ... el resto de tu código igual
 
-        // Close when clicking outside
         document.addEventListener('click', (e) => {
             if (!accessPanel.contains(e.target) && !accessBtn.contains(e.target)) {
                 accessPanel.setAttribute('hidden', '');
             }
         });
 
-        // Progress control for UX when options are clicked
         let _a11yProgressRunning = false;
         const progressEl = accessPanel.querySelector('.access-progress');
         const progressBar = accessPanel.querySelector('.access-progress-bar');
@@ -3038,11 +3023,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         function startProgress() {
             if (!progressEl || !progressBar) return;
-            // restart if already running
             if (_a11yProgressRunning) {
                 progressBar.style.transition = 'none';
                 progressBar.style.width = '0%';
-                // force reflow
                 void progressBar.offsetWidth;
                 progressBar.style.transition = 'width 1100ms ease';
             }
@@ -3050,11 +3033,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             progressEl.setAttribute('aria-hidden', 'false');
             optionButtons.forEach(b => { b.disabled = true; });
             progressBar.style.width = '0%';
-            // allow the DOM to paint before starting the animation
             requestAnimationFrame(() => { progressBar.style.width = '100%'; });
-            // clear after transition + small buffer
             setTimeout(() => {
-                progressBar.style.width = '100%';
                 setTimeout(() => {
                     progressEl.setAttribute('aria-hidden', 'true');
                     progressBar.style.width = '0%';
@@ -3064,60 +3044,56 @@ document.addEventListener('DOMContentLoaded', async () => {
             }, 1200);
         }
 
-        // Option handlers
         optionButtons.forEach(btn => {
             btn.addEventListener('click', () => {
                 const action = btn.getAttribute('data-action');
-                const state = JSON.parse(localStorage.getItem('vital_accessibility') || '{}');
+                
+                // ELIMINAMOS la línea que leía el localStorage aquí
+                
                 switch (action) {
                     case 'increase': {
                         const current = parseFloat(getComputedStyle(document.documentElement).fontSize);
                         const next = Math.min(28, current + 2);
                         document.documentElement.style.fontSize = next + 'px';
-                        state.fontSize = next + 'px';
                         break;
                     }
                     case 'decrease': {
                         const current = parseFloat(getComputedStyle(document.documentElement).fontSize);
                         const next = Math.max(12, current - 2);
                         document.documentElement.style.fontSize = next + 'px';
-                        state.fontSize = next + 'px';
                         break;
                     }
                     case 'spacing-increase': {
-                        state.spacingBig = true;
                         contentRoot.classList.add('a11y-spacing-big');
                         break;
                     }
                     case 'spacing-decrease': {
-                        state.spacingBig = false;
                         contentRoot.classList.remove('a11y-spacing-big');
                         break;
                     }
                     case 'invert': {
-                        state.invert = !state.invert;
-                        contentRoot.classList.toggle('a11y-invert', !!state.invert);
+                        // Toggle directo: funciona al primer clic
+                        contentRoot.classList.toggle('a11y-invert');
                         break;
                     }
                     case 'grayscale': {
-                        state.grayscale = !state.grayscale;
-                        contentRoot.classList.toggle('a11y-grayscale', !!state.grayscale);
+                        // Toggle directo: funciona al primer clic
+                        contentRoot.classList.toggle('a11y-grayscale');
                         break;
                     }
                     case 'underline': {
-                        state.underline = !state.underline;
-                        contentRoot.classList.toggle('a11y-underline-links', !!state.underline);
+                        contentRoot.classList.toggle('a11y-underline-links');
                         break;
                     }
                     case 'reset': {
+                        // Borramos memoria y quitamos todas las clases
                         localStorage.removeItem('vital_accessibility');
                         document.documentElement.style.fontSize = '';
                         contentRoot.classList.remove('a11y-invert','a11y-grayscale','a11y-underline-links','a11y-spacing-big');
                         break;
                     }
                 }
-                localStorage.setItem('vital_accessibility', JSON.stringify(state));
-                // Small UX: show progress bar when option is activated
+                // Quitamos el guardado automático de localStorage para que no persista al recargar
                 startProgress();
             });
         });
