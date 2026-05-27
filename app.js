@@ -118,16 +118,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     const BASE_TRACKING_LNG = -74.05669582712905;
     const IMAGEN_PLACEHOLDER = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="240" height="180" viewBox="0 0 240 180"%3E%3Crect width="240" height="180" rx="16" fill="%23f1f5f9"/%3E%3Crect x="16" y="16" width="208" height="148" rx="12" fill="%23e2e8f0"/%3E%3Ccircle cx="82" cy="80" r="18" fill="%2394a3b8"/%3E%3Cpath d="M36 146l48-42 34 30 36-28 50 40H36z" fill="%2394a3b8"/%3E%3Ctext x="120" y="167" text-anchor="middle" font-family="Arial" font-size="12" fill="%2364758b"%3EImagen no disponible%3C/text%3E%3C/svg%3E';
     const IMAGENES_CATALOGO = {
-        amoxicilina: 'https://copservir.vtexassets.com/arquivos/ids/1869990-1200-auto?v=639101941221530000&width=1200&height=auto&aspect=true',
-        ibuprofeno: 'https://copservir.vtexassets.com/arquivos/ids/1763204-1200-auto?v=638970576127770000&width=1200&height=auto&aspect=true',
-        paracetamol: 'https://www.tiendas3b.com/wp-content/uploads/2025/10/17265-a-768x768.jpg',
-        lantus: 'https://pedidosonline.farmaciaschavez.com.bo:8443/catalogofchavez/7641/INSULINALANTUS100UIMLSOLASTAR-3582910023623_7641.jpg',
-        losartan: 'https://www.drogueriascafam.com.co/49526-large_default/comprar-en-cafam-losartan-50-mg-caja-con-30-tabletas-recubiertas-precio.jpg',
-        metformina: 'https://www.drogueriascafam.com.co/38323-large_default/comprar-en-cafam-metformina-850-mg-caja-con-30-tabletas-precio.jpg',
-        omeprazol: 'https://www.kernpharma.com/sites/default/files/styles/max_1024x1024/public/productos/imagenes/omeprazol-20-mg-comprimidos-recubiertos-con-pelicula-efg-56-comprimidos-0.webp?itok=oxMtIWKq',
-        salbutamol: 'https://www.drogueriascafam.com.co/49476-large_default/comprar-en-cafam-salbutamol-100-mcg-caja-con-frasco-inhalacion-con-200-dosis-suspension-precio.jpg',
-        enalapril: 'https://ik.imagekit.io/buscamed/14988883413792978205.webp?tr=w-640&v=VANtUkW',
-        atorvastatina: 'https://www.drogueriascafam.com.co/49527-large_default/comprar-en-cafam-atorvastatina-40-mg-caja-con-10-tabletas-recubiertas-precio.jpg'
+        amoxicilina: 'assets/imagenes/Amoxicilina (1).png',
+        ibuprofeno: 'assets/imagenes/Ibuprofeno (1).png',
+        paracetamol: 'assets/imagenes/Paracetamol (1).png',
+        lantus: 'assets/imagenes/Lantus(1).png',
+        insulinaglargina: 'assets/imagenes/Lantus(1).png',
+        losartan: 'assets/imagenes/Losartan (1).png',
+        metformina: 'assets/imagenes/Metformina (1).png',
+        omeprazol: 'assets/imagenes/Omeprazol (1).png',
+        salbutamol: 'assets/imagenes/Salbutamol (1).png',
+        enalapril: 'assets/imagenes/Enalapril (1).png',
+        atorvastatina: 'assets/imagenes/Atorvastatina (1).png'
     };
     let panelFarmaciaAutenticado = localStorage.getItem('vitalMarketPanelAuth') === 'true';
     let clienteSesion = null;
@@ -706,19 +707,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function resolverImagenProducto(producto) {
+        // Priorizar catálogo para reflejar reemplazos recientes de archivos locales.
+        const productoId = obtenerIdProductoDesdeNombre(producto?.nombre || '');
+        if (productoId && IMAGENES_CATALOGO[productoId]) {
+            return IMAGENES_CATALOGO[productoId];
+        }
+
         const candidata = (typeof producto?.imagen === 'string' ? producto.imagen : '').trim();
         if (candidata && candidata !== '') {
             // Si existe imagen personalizada y no es placeholder
             const esDataImage = candidata.startsWith('data:image/');
-            const esHttp = candidata.startsWith('http://') || candidata.startsWith('https://');
             const esRutaLocal = candidata.startsWith('/');
-            if (esDataImage || esHttp || esRutaLocal) return candidata;
-        }
-
-        // Intentar usar imagen de catálogo si existe
-        const productoId = obtenerIdProductoDesdeNombre(producto?.nombre || '');
-        if (productoId && IMAGENES_CATALOGO[productoId]) {
-            return IMAGENES_CATALOGO[productoId];
+            const esRelativa = /\.(png|jpe?g|webp|svg)$/i.test(candidata) || candidata.startsWith('assets/') || candidata.startsWith('./') || candidata.startsWith('../');
+            if (esDataImage || esRutaLocal || esRelativa) return candidata;
         }
 
         return IMAGEN_PLACEHOLDER;
@@ -729,11 +730,33 @@ document.addEventListener('DOMContentLoaded', async () => {
             const map = { 'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u' };
             return map[m] || m;
         });
+        // Primero intentar coincidencia exacta
         for (let id of Object.keys(inventarioActual)) {
             if (id.toLowerCase() === nombreNormalizado) return id;
+            const prodNombre = String(inventarioActual[id]?.nombre || '').toLowerCase().replace(/\s+/g, '').replace(/[áéíóú]/g, (m) => { const map = { 'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u' }; return map[m] || m; });
+            if (prodNombre && prodNombre === nombreNormalizado) return id;
+        }
+        // Si no hay coincidencia exacta, intentar coincidencia parcial
+        for (let id of Object.keys(inventarioActual)) {
+            const idNorm = String(id || '').toLowerCase().replace(/\s+/g, '');
+            if (!idNorm) continue;
+            const prodNombre = String(inventarioActual[id]?.nombre || '').toLowerCase().replace(/\s+/g, '').replace(/[áéíóú]/g, (m) => { const map = { 'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u' }; return map[m] || m; });
+            if (nombreNormalizado.includes(idNorm) || idNorm.includes(nombreNormalizado)) return id;
+            if (prodNombre && (nombreNormalizado.includes(prodNombre) || prodNombre.includes(nombreNormalizado))) return id;
         }
         return null;
     }
+
+    // Permite forzar la actualización de imágenes desde la consola sin recargar
+    window.forceActualizarImagenes = async function() {
+        try {
+            if (typeof completarImagenesCatalogoSiFaltan === 'function') await completarImagenesCatalogoSiFaltan();
+            if (typeof actualizarInterfazCompleta === 'function') actualizarInterfazCompleta();
+            console.log('Imágenes del catálogo aplicadas y UI actualizada');
+        } catch (e) {
+            console.warn('Error forzando actualización de imágenes:', e?.message || e);
+        }
+    };
 
     function imagenNecesitaReemplazo(url) {
         const valor = (typeof url === 'string' ? url : '').trim();
@@ -763,14 +786,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     function obtenerEstadoPedido(etaIso) {
         const etaTs = new Date(etaIso).getTime();
         if (!Number.isFinite(etaTs)) {
-            return { texto: 'EN PREPARACION', clase: 'bg-amber-100 text-amber-700' };
+            return { texto: 'EN PREPARACION', clase: 'bg-sky-100 text-sky-700' };
         }
 
         const ahora = Date.now();
         const faltanMs = etaTs - ahora;
         if (faltanMs <= 0) return { texto: 'ENTREGADO', clase: 'bg-green-100 text-green-700' };
         if (faltanMs <= 15 * 60 * 1000) return { texto: 'EN CAMINO', clase: 'bg-blue-100 text-blue-700' };
-        return { texto: 'EN PREPARACION', clase: 'bg-amber-100 text-amber-700' };
+        return { texto: 'EN PREPARACION', clase: 'bg-sky-100 text-sky-700' };
     }
 
     function obtenerCoordenadasSeguimiento(data) {
@@ -1046,8 +1069,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             modal.innerHTML = `
                 <div class="bg-white rounded-2xl max-w-sm w-full shadow-2xl border border-slate-200 p-6 animate-fade-in">
                     <div class="flex items-center justify-center mb-4">
-                        <span class="material-symbols-outlined text-4xl text-amber-500">warning</span>
-                    </div>
+                            <span class="material-symbols-outlined text-4xl text-sky-500">warning</span>
+                        </div>
                     <h3 class="text-lg font-bold text-slate-900 text-center mb-3">${mensaje}</h3>
                     <div class="flex gap-3 justify-center">
                         <button class="btn-modal-cancel px-6 py-2 bg-slate-200 text-slate-800 rounded-lg font-bold hover:bg-slate-300 transition-all">
@@ -1285,7 +1308,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 etiqueta: 'POR ACABARSE',
                 colorTexto: 'text-amber-600',
                 colorFondo: 'bg-amber-100 text-amber-700',
-                colorBorde: 'border-l-amber-500'
+                colorBorde: 'border-l-amber-400'
             };
         }
 
@@ -2616,12 +2639,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const estadoNormalizado = estado.toLowerCase();
                 const estiloBg = estadoNormalizado === 'entregado' ? 'bg-green-50 border-green-200' :
                                  estadoNormalizado === 'cancelado' ? 'bg-red-50 border-red-200' :
-                                 estadoNormalizado === 'en preparacion' ? 'bg-amber-50 border-amber-200' :
+                                 estadoNormalizado === 'en preparacion' ? 'bg-sky-50 border-sky-200' :
                                  'bg-blue-50 border-blue-200';
 
                 const estiloEstado = estadoNormalizado === 'entregado' ? 'text-green-700 bg-green-100' :
                                      estadoNormalizado === 'cancelado' ? 'text-red-700 bg-red-100' :
-                                     estadoNormalizado === 'en preparacion' ? 'text-amber-700 bg-amber-100' :
+                                     estadoNormalizado === 'en preparacion' ? 'text-sky-700 bg-sky-100' :
                                      'text-blue-700 bg-blue-100';
 
                 const html = `
@@ -2941,6 +2964,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function resetearDatos() {
         if (confirm('Estas seguro? Esto restablecera todos los stocks a los valores iniciales.')) {
             inventarioActual = JSON.parse(JSON.stringify(datosLocales.inventario));
+            // Forzar aplicación de imágenes del catálogo (asegura que archivos locales se muestren inmediatamente)
+            if (typeof completarImagenesCatalogoSiFaltan === 'function') {
+                try {
+                    completarImagenesCatalogoSiFaltan();
+                } catch (e) {
+                    console.warn('Error al aplicar imagenes catalogo:', e?.message || e);
+                }
+            }
             actualizarInterfazCompleta();
             await guardarEnFirebase();
             mostrarNotificacion('Datos restablecidos correctamente', 'success');
@@ -2960,6 +2991,133 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 13. INICIALIZAR EVENTOS
     // ============================================
     let categoriaFiltro = 'todos';
+
+    // ----------------------
+    // Accessibility widget
+    // ----------------------
+    (function initAccessibilityWidget() {
+        const accessBtn = document.getElementById('access-btn');
+        const accessPanel = document.getElementById('access-panel');
+        if (!accessBtn || !accessPanel) return;
+
+        // Apply saved state from localStorage
+        const contentRoot = document.querySelector('main') || document.body;
+        const applyState = () => {
+            const state = JSON.parse(localStorage.getItem('vital_accessibility') || '{}');
+            if (state.fontSize) document.documentElement.style.fontSize = state.fontSize;
+            contentRoot.classList.toggle('a11y-invert', !!state.invert);
+            contentRoot.classList.toggle('a11y-grayscale', !!state.grayscale);
+            contentRoot.classList.toggle('a11y-underline-links', !!state.underline);
+            contentRoot.classList.toggle('a11y-spacing-big', !!state.spacingBig);
+        };
+
+        applyState();
+
+        accessBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const hidden = accessPanel.hasAttribute('hidden');
+            if (hidden) accessPanel.removeAttribute('hidden'); else accessPanel.setAttribute('hidden', '');
+        });
+
+        // Close when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!accessPanel.contains(e.target) && !accessBtn.contains(e.target)) {
+                accessPanel.setAttribute('hidden', '');
+            }
+        });
+
+        // Progress control for UX when options are clicked
+        let _a11yProgressRunning = false;
+        const progressEl = accessPanel.querySelector('.access-progress');
+        const progressBar = accessPanel.querySelector('.access-progress-bar');
+        const optionButtons = Array.from(accessPanel.querySelectorAll('.access-option'));
+
+        function startProgress() {
+            if (!progressEl || !progressBar) return;
+            // restart if already running
+            if (_a11yProgressRunning) {
+                progressBar.style.transition = 'none';
+                progressBar.style.width = '0%';
+                // force reflow
+                void progressBar.offsetWidth;
+                progressBar.style.transition = 'width 1100ms ease';
+            }
+            _a11yProgressRunning = true;
+            progressEl.setAttribute('aria-hidden', 'false');
+            optionButtons.forEach(b => { b.disabled = true; });
+            progressBar.style.width = '0%';
+            // allow the DOM to paint before starting the animation
+            requestAnimationFrame(() => { progressBar.style.width = '100%'; });
+            // clear after transition + small buffer
+            setTimeout(() => {
+                progressBar.style.width = '100%';
+                setTimeout(() => {
+                    progressEl.setAttribute('aria-hidden', 'true');
+                    progressBar.style.width = '0%';
+                    optionButtons.forEach(b => { b.disabled = false; });
+                    _a11yProgressRunning = false;
+                }, 250);
+            }, 1200);
+        }
+
+        // Option handlers
+        optionButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const action = btn.getAttribute('data-action');
+                const state = JSON.parse(localStorage.getItem('vital_accessibility') || '{}');
+                switch (action) {
+                    case 'increase': {
+                        const current = parseFloat(getComputedStyle(document.documentElement).fontSize);
+                        const next = Math.min(28, current + 2);
+                        document.documentElement.style.fontSize = next + 'px';
+                        state.fontSize = next + 'px';
+                        break;
+                    }
+                    case 'decrease': {
+                        const current = parseFloat(getComputedStyle(document.documentElement).fontSize);
+                        const next = Math.max(12, current - 2);
+                        document.documentElement.style.fontSize = next + 'px';
+                        state.fontSize = next + 'px';
+                        break;
+                    }
+                    case 'spacing-increase': {
+                        state.spacingBig = true;
+                        contentRoot.classList.add('a11y-spacing-big');
+                        break;
+                    }
+                    case 'spacing-decrease': {
+                        state.spacingBig = false;
+                        contentRoot.classList.remove('a11y-spacing-big');
+                        break;
+                    }
+                    case 'invert': {
+                        state.invert = !state.invert;
+                        contentRoot.classList.toggle('a11y-invert', !!state.invert);
+                        break;
+                    }
+                    case 'grayscale': {
+                        state.grayscale = !state.grayscale;
+                        contentRoot.classList.toggle('a11y-grayscale', !!state.grayscale);
+                        break;
+                    }
+                    case 'underline': {
+                        state.underline = !state.underline;
+                        contentRoot.classList.toggle('a11y-underline-links', !!state.underline);
+                        break;
+                    }
+                    case 'reset': {
+                        localStorage.removeItem('vital_accessibility');
+                        document.documentElement.style.fontSize = '';
+                        contentRoot.classList.remove('a11y-invert','a11y-grayscale','a11y-underline-links','a11y-spacing-big');
+                        break;
+                    }
+                }
+                localStorage.setItem('vital_accessibility', JSON.stringify(state));
+                // Small UX: show progress bar when option is activated
+                startProgress();
+            });
+        });
+    })();
 
     function inicializarEventos() {
         document.getElementById('btn-notificaciones')?.addEventListener('click', () => {

@@ -403,9 +403,9 @@
         }
 
         body:not(.premium-theme) button.bg-accent {
-            background: linear-gradient(180deg, #ffe763 0%, #ffc928 100%);
-            box-shadow: 0 10px 24px rgba(255, 192, 0, 0.4);
-            border-color: rgba(255, 214, 102, 0.62);
+            background: linear-gradient(180deg, #eaf5ff 0%, #BFDBFE 100%);
+            box-shadow: 0 10px 24px rgba(191, 219, 254, 0.4);
+            border-color: rgba(191, 219, 254, 0.62);
             text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
         }
 
@@ -415,7 +415,7 @@
         }
 
         body:not(.premium-theme) .bg-white {
-            border-color: rgba(96, 165, 250, 0.28);
+            border-color: rgba(191, 219, 254, 0.28);
             box-shadow: 0 10px 24px rgba(2, 23, 56, 0.28);
         }
 
@@ -438,7 +438,7 @@
         select:focus,
         textarea:focus {
             border-color: rgba(37, 99, 235, 0.62);
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16), 0 8px 18px rgba(37, 99, 235, 0.14);
+            box-shadow: 0 0 0 3px rgba(191, 219, 254, 0.16), 0 8px 18px rgba(191, 219, 254, 0.14);
             outline: none;
         }
 
@@ -463,7 +463,7 @@
 
         .nav-btn.text-primary {
             background: linear-gradient(180deg, rgba(191, 219, 254, 0.72) 0%, rgba(219, 234, 254, 0.72) 100%);
-            box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.28), 0 6px 14px rgba(30, 64, 175, 0.24);
+            box-shadow: inset 0 0 0 1px rgba(191, 219, 254, 0.28), 0 6px 14px rgba(191, 219, 254, 0.24);
         }
 
         /* Modales con mejor contraste visual */
@@ -493,9 +493,9 @@
 
         body.premium-theme #section-panel .bg-white,
         body.premium-theme #section-panel .bg-red-50,
-        body.premium-theme #section-panel .bg-amber-50,
+        body.premium-theme #section-panel .bg-sky-50,
         body.premium-theme #section-panel .bg-slate-800,
-        body.premium-theme #section-panel .bg-yellow-500,
+        body.premium-theme #section-panel .bg-green-600,
         body.premium-theme #section-panel .bg-primary {
             position: relative;
             overflow: hidden;
@@ -504,9 +504,9 @@
 
         body.premium-theme #section-panel .bg-white::before,
         body.premium-theme #section-panel .bg-red-50::before,
-        body.premium-theme #section-panel .bg-amber-50::before,
+        body.premium-theme #section-panel .bg-sky-50::before,
         body.premium-theme #section-panel .bg-slate-800::before,
-        body.premium-theme #section-panel .bg-yellow-500::before,
+        body.premium-theme #section-panel .bg-green-600::before,
         body.premium-theme #section-panel .bg-primary::before {
             content: '';
             position: absolute;
@@ -543,8 +543,8 @@
 
         /* Campana de notificaciones con brillo */
         @keyframes bellGlowPulse {
-            0%, 100% { box-shadow: 0 0 0 rgba(255, 215, 0, 0.0), inset 0 0 0 rgba(255, 215, 0, 0.0); }
-            50% { box-shadow: 0 0 14px rgba(255, 215, 0, 0.45), inset 0 0 10px rgba(255, 215, 0, 0.18); }
+            0%, 100% { box-shadow: 0 0 0 rgba(191, 219, 254, 0.0), inset 0 0 0 rgba(191, 219, 254, 0.0); }
+            50% { box-shadow: 0 0 14px rgba(191, 219, 254, 0.45), inset 0 0 10px rgba(191, 219, 254, 0.18); }
         }
 
         @keyframes bellBadgePing {
@@ -558,11 +558,54 @@
 
         .notif-bell-glow.notif-has-unread {
             animation: bellGlowPulse 1.8s ease-in-out infinite;
-            border-color: rgba(255, 215, 0, 0.85);
+            border-color: rgba(191, 219, 254, 0.85);
         }
 
         #notificaciones-badge {
             animation: bellBadgePing 1.2s ease-in-out infinite;
+        }
+
+        /* Ajuste final: azul + esmeralda profesional, menos saturado */
+        body:not(.premium-theme) button.bg-accent {
+            background: linear-gradient(180deg, #eaf5ff 0%, #BFDBFE 100%);
+            box-shadow: 0 8px 18px rgba(191, 219, 254, 0.28);
+            border-color: rgba(191, 219, 254, 0.48);
+        }
+
+        body.premium-theme {
+            background:
+                radial-gradient(circle at 12% 10%, rgba(191, 219, 254, 0.16), transparent 42%),
+                radial-gradient(circle at 86% 18%, rgba(191, 219, 254, 0.14), transparent 36%),
+                linear-gradient(180deg, #f7fffc 0%, #ecfdf5 100%);
+        }
+
+        body.premium-theme #main-header {
+            box-shadow: 0 10px 24px rgba(191, 219, 254, 0.22), 0 3px 10px rgba(0, 0, 0, 0.16);
+            border-bottom: 1px solid rgba(191, 219, 254, 0.34);
+            animation: none;
+        }
+
+        body.premium-theme #main-header::after,
+        body.premium-theme button::after,
+        body.premium-theme .bg-white::before,
+        body.premium-theme .bg-white::after,
+        body.premium-theme::after {
+            animation: none;
+            opacity: 0.25;
+        }
+
+        body.premium-theme .bg-white {
+            box-shadow: 0 8px 18px rgba(191, 219, 254, 0.14), 0 2px 8px rgba(0, 0, 0, 0.08);
+            border-color: rgba(147, 197, 253, 0.4);
+        }
+
+        body.premium-theme button {
+            animation: none;
+            box-shadow: 0 0 0 1px rgba(191, 219, 254, 0.42), 0 0 14px rgba(191, 219, 254, 0.2);
+        }
+
+        body.premium-theme button:hover {
+            box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.58), 0 0 20px rgba(96, 165, 250, 0.3);
         }
     </style>
     
@@ -572,7 +615,7 @@
                 extend: {
                     colors: { 
                         "primary": "#003366", 
-                        "accent": "#FFD700" 
+                        "accent": "#BFDBFE" 
                     },
                     fontFamily: { 
                         "display": ["Sora", "sans-serif"] 
@@ -644,7 +687,7 @@
 
             <div class="p-4 mt-2">
                 <div class="flex flex-col gap-4 rounded-2xl border-2 border-accent bg-white p-5 shadow-lg relative">
-                    <div class="absolute top-0 right-0 bg-accent text-primary text-[10px] font-bold px-3 py-1 rounded-bl-lg">URGENTE</div>
+                    <div class="absolute top-0 right-0 bg-accent text-primary font-bold urgent-badge">URGENTE</div>
                     <div class="flex gap-4">
                         <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-accent/20"><span class="material-symbols-outlined text-primary text-3xl">pill</span></div>
                         <p class="text-slate-700 font-semibold">Llegó stock de tu <span class="text-primary underline">Amoxicilina</span> recurrente</p>
@@ -664,7 +707,7 @@
                     <!-- Productos rápidos cargados dinámicamente -->
                 </div>
                 <div id="premium-benefits" class="mt-4 hidden">
-                    <div class="bg-gradient-to-r from-yellow-50 to-amber-50 border border-accent rounded-xl p-4">
+                    <div class="bg-gradient-to-r from-sky-50 to-sky-100 border border-accent rounded-xl p-4">
                         <div class="flex items-center gap-2 mb-2">
                             <span class="material-symbols-outlined text-accent">workspace_premium</span>
                             <h4 class="font-bold text-primary">Beneficios Premium</h4>
@@ -681,7 +724,7 @@
                                         <div class="bg-white rounded-xl p-6 max-w-md w-full shadow-xl border border-slate-200">
                                             <h2 class="text-xl font-bold mb-4 text-primary">Selecciona un método de pago</h2>
                                             <div class="space-y-3 mb-4">
-                                                <button id="pago-wompi" class="w-full bg-yellow-400 text-primary font-bold py-2 rounded-lg border border-yellow-500">Pagar con Wompi</button>
+                                                <button id="pago-wompi" class="w-full bg-sky-300 text-primary font-bold py-2 rounded-lg border border-sky-400">Pagar con Wompi</button>
                                                 <button id="pago-dev" class="w-full bg-slate-200 text-slate-700 font-bold py-2 rounded-lg border border-slate-300">Simular pago (pruebas)</button>
                                             </div>
                                             <button id="cerrar-modal-pago" class="w-full mt-2 bg-slate-100 text-slate-600 py-2 rounded-lg font-bold">Cancelar</button>
@@ -887,7 +930,7 @@
                     <button id="btn-sync-inventario-top" class="w-full flex items-center justify-center gap-2 bg-primary text-white py-3 rounded-xl font-bold shadow-md hover:bg-[#004488] transition-all">
                         <span class="material-symbols-outlined">sync</span> Sincronizar ahora
                     </button>
-                    <button id="btn-test-firebase-top" class="w-full flex items-center justify-center gap-2 bg-yellow-500 text-white py-3 rounded-xl font-bold shadow-md hover:bg-yellow-600 transition-all">
+                    <button id="btn-test-firebase-top" class="w-full flex items-center justify-center gap-2 bg-sky-300 text-primary py-3 rounded-xl font-bold shadow-md hover:bg-sky-400 transition-all">
                         <span class="material-symbols-outlined">search</span> TEST: Ver datos de Firebase
                     </button>
                 </div>
@@ -908,14 +951,14 @@
                         <p class="text-xs text-red-400 mt-1">productos críticos</p>
                         <button id="btn-ver-criticos" class="mt-2 text-[11px] font-bold text-red-600 bg-white/80 border border-red-200 rounded-full px-2 py-1 hover:bg-white">Ver nombres</button>
                     </div>
-                    <div class="flex-1 bg-amber-50 p-4 rounded-xl border-b-4 border-amber-500 shadow-sm relative overflow-hidden">
+                    <div class="flex-1 bg-sky-50 p-4 rounded-xl border-b-4 border-sky-500 shadow-sm relative overflow-hidden">
                         <div class="absolute -right-2 -top-2 opacity-10">
-                            <span class="material-symbols-outlined text-6xl text-amber-500">schedule</span>
+                            <span class="material-symbols-outlined text-6xl text-sky-500">schedule</span>
                         </div>
-                        <p class="text-amber-700 text-xs font-bold uppercase tracking-wider">VENCIMIENTO DE PRODUCTOS</p>
-                        <p id="dashboard-expired" class="text-amber-700 text-4xl font-black mt-1">00</p>
-                        <p id="dashboard-expiring-summary" class="text-xs text-amber-600 mt-1">0 por vencer (30 dias)</p>
-                        <button id="btn-ver-vencidos" class="mt-2 text-[11px] font-bold text-amber-700 bg-white/80 border border-amber-200 rounded-full px-2 py-1 hover:bg-white">Ver nombres</button>
+                        <p class="text-sky-700 text-xs font-bold uppercase tracking-wider">VENCIMIENTO DE PRODUCTOS</p>
+                        <p id="dashboard-expired" class="text-sky-700 text-4xl font-black mt-1">00</p>
+                        <p id="dashboard-expiring-summary" class="text-xs text-sky-600 mt-1">0 por vencer (30 dias)</p>
+                        <button id="btn-ver-vencidos" class="mt-2 text-[11px] font-bold text-sky-700 bg-white/80 border border-sky-200 rounded-full px-2 py-1 hover:bg-white">Ver nombres</button>
                     </div>
                 </div>
 
@@ -927,7 +970,7 @@
                 </div>
 
                 <!-- Sello de confianza -->
-                <div class="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-3 mb-6 shadow-sm flex items-center justify-center gap-2">
+                <div class="bg-gradient-to-r from-sky-50 to-sky-100 border border-sky-200 rounded-xl p-3 mb-6 shadow-sm flex items-center justify-center gap-2">
                     <span class="material-symbols-outlined text-green-600 text-2xl">verified</span>
                     <p class="text-green-800 text-xs font-bold text-center">
                         Tu Farmacia tiene 98% de integridad de datos.<br>
@@ -941,7 +984,7 @@
                         Inventario Completo
                     </h3>
                     <div class="flex gap-2">
-                        <button id="btn-agregar-producto" class="text-xs bg-green-600 text-white px-3 py-2 rounded-lg font-bold flex items-center gap-1 hover:bg-green-700">
+                        <button id="btn-agregar-producto" class="text-xs bg-sky-400 text-primary px-3 py-2 rounded-lg font-bold flex items-center gap-1 hover:bg-sky-500">
                             <span class="material-symbols-outlined text-base">add</span> Agregar productos
                         </button>
                     </div>
@@ -980,7 +1023,7 @@
                             <button id="btn-exportar-pdf-modal" class="w-full bg-red-600 text-white py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-red-700">
                                 <span class="material-symbols-outlined">picture_as_pdf</span> Descargar PDF
                             </button>
-                            <button id="btn-exportar-excel-modal" class="w-full bg-green-600 text-white py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-green-700">
+                            <button id="btn-exportar-excel-modal" class="w-full bg-sky-400 text-primary py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-sky-500">
                                 <span class="material-symbols-outlined">table_chart</span> Descargar Excel
                             </button>
                             <button id="cancelar-modal-exportar" class="w-full bg-slate-100 text-slate-700 py-2.5 rounded-xl font-bold hover:bg-slate-200">
@@ -993,6 +1036,36 @@
             </div>
         </section>
     </main>
+
+    <!-- SECCIÓN: AVISOS LEGALES Y NORMATIVOS -->
+    <footer class="legal-footer w-full">
+        <div class="container mx-auto max-w-6xl">
+            <div class="legal-grid">
+                <div>
+                    <h4>Avisos legales</h4>
+                    <p>Este portal es una plataforma de gestión y visualización de inventario. El contenido tiene carácter informativo y no sustituye la consulta con un profesional de la salud.</p>
+                    <a href="#">Términos y Condiciones</a>
+                    <br>
+                    <a href="#">Política de Privacidad</a>
+                </div>
+                <div>
+                    <h4>Normativa sanitaria</h4>
+                    <p>La dispensación y conservación de medicamentos debe cumplir la normativa sanitaria vigente y las buenas prácticas de almacenamiento y transporte.</p>
+                    <a href="#">Requisitos sanitarios y buenas prácticas</a>
+                    <br>
+                    <a href="#">Etiquetado y conservación de medicamentos</a>
+                </div>
+                <div>
+                    <h4>Responsabilidad</h4>
+                    <p>Vital Market no se hace responsable por el uso indebido de los contenidos. Consulte siempre con el personal de salud autorizado.</p>
+                    <a href="#">Contacto legal</a>
+                    <br>
+                    <a href="#">Política de Cookies</a>
+                </div>
+            </div>
+            <p class="disclaimer">Si deseas que incluya textos legales específicos (leyes, resoluciones o normativas), sube los documentos o indícame los números y los copio aquí.</p>
+        </div>
+    </footer>
 
     <!-- BARRA DE NAVEGACIÓN -->
     <nav class="fixed bottom-0 left-0 right-0 flex border-t border-slate-200 bg-white/95 backdrop-blur-md px-4 pb-4 pt-2 z-50">
@@ -1047,7 +1120,7 @@
             <button id="cerrar-premium" class="text-white"><span class="material-symbols-outlined">close</span></button>
         </div>
         <div class="p-4 space-y-4">
-            <div class="bg-amber-50 border border-amber-200 rounded-xl p-3">
+            <div class="bg-sky-50 border border-sky-200 rounded-xl p-3">
                 <p class="text-sm text-slate-700">Plan Premium mensual</p>
                 <p class="text-2xl font-black text-primary">$19.900</p>
                 <p class="text-xs text-slate-500">Descuento, prioridad y envio gratis</p>
@@ -1149,7 +1222,7 @@
         
         <div class="flex gap-2">
             <button id="cancelar-crear-producto" class="flex-1 bg-slate-100 text-slate-700 py-2 rounded-lg font-bold hover:bg-slate-200">Cancelar</button>
-            <button id="confirmar-crear-producto" class="flex-1 bg-green-600 text-white py-2 rounded-lg font-bold hover:bg-green-700">Crear</button>
+            <button id="confirmar-crear-producto" class="flex-1 bg-sky-400 text-primary py-2 rounded-lg font-bold hover:bg-sky-500">Crear</button>
         </div>
     </div>
 </div>
@@ -1163,3 +1236,28 @@
 
 </body>
 </html>
+
+<!-- Accessibility widget (floating) -->
+<div id="accessibility-widget" aria-hidden="false">
+    <button id="access-btn" aria-label="Opciones de accesibilidad" title="Accesibilidad">
+        <!-- If you want to use your mascot image, place it at assets/ui/accessibility-mascot.png -->
+        <img id="access-icon" src="assets/imagenes/Boton accecibilidad(1).png" alt="Accesibilidad" onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 64 64\'><circle cx=\'32\' cy=\'32\' r=\'30\' fill=\'%2300aaff\'/><path fill=\'%23fff\' d=\'M32 18c-3 0-5 2-5 5v8H22v4h5v7h4v-7h6v-4h-6v-8c0-1 1-2 2-2s2 1 2 2v8h4v-8c0-3-2-5-5-5z' /></svg>'">
+    </button>
+
+    <div id="access-panel" role="dialog" aria-label="Opciones de accesibilidad" hidden>
+        <h3 class="access-title">Opciones de accesibilidad</h3>
+        <div class="access-progress" role="status" aria-hidden="true">
+            <div class="access-progress-bar" style="width:0%"></div>
+        </div>
+        <div class="access-options">
+            <button class="access-option" data-action="increase">Aumentar tamaño del texto</button>
+            <button class="access-option" data-action="decrease">Disminuir tamaño del texto</button>
+            <button class="access-option" data-action="spacing-increase">Aumentar espaciado</button>
+            <button class="access-option" data-action="spacing-decrease">Reducir espaciado</button>
+            <button class="access-option" data-action="invert">Invertir colores</button>
+            <button class="access-option" data-action="grayscale">Tonos grises</button>
+            <button class="access-option" data-action="underline">Subrayar enlaces</button>
+            <button class="access-option" data-action="reset">Restablecer</button>
+        </div>
+    </div>
+</div>
