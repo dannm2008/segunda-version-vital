@@ -2995,15 +2995,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ----------------------
     // Accessibility widget
     // ----------------------
-    (function initAccessibilityWidget() {
+(function initAccessibilityWidget() {
         const accessBtn = document.getElementById('access-btn');
         const accessPanel = document.getElementById('access-panel');
         if (!accessBtn || !accessPanel) return;
 
-        // Apply saved state from localStorage
         const contentRoot = document.querySelector('main') || document.body;
+
+        // ESTA FUNCIÓN AHORA SOLO EXISTE, PERO NO SE LLAMA AUTOMÁTICAMENTE AL CARGAR
         const applyState = () => {
-            const state = JSON.parse(localStorage.getItem('vital_accessibility') || '{}');
+            // Ya no leemos de localStorage, empezamos siempre en blanco
+            const state = {}; 
             if (state.fontSize) document.documentElement.style.fontSize = state.fontSize;
             contentRoot.classList.toggle('a11y-invert', !!state.invert);
             contentRoot.classList.toggle('a11y-grayscale', !!state.grayscale);
@@ -3011,13 +3013,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             contentRoot.classList.toggle('a11y-spacing-big', !!state.spacingBig);
         };
 
-        applyState();
+        // IMPORTANTE: Aquí NO llamamos a applyState(); así siempre empieza normal.
 
         accessBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             const hidden = accessPanel.hasAttribute('hidden');
             if (hidden) accessPanel.removeAttribute('hidden'); else accessPanel.setAttribute('hidden', '');
         });
+        
+        // ... el resto de tu código igual
 
         // Close when clicking outside
         document.addEventListener('click', (e) => {
