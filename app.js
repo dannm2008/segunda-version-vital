@@ -2108,7 +2108,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <span class="material-symbols-outlined text-base">add_shopping_cart</span>
                         ${sinStock ? 'Sin stock' : 'Agregar'}
                     </button>
-                    <button onclick="window.verDetallesProducto('${prod.id}')" class="bg-slate-50 text-primary font-bold py-2 rounded-lg text-sm border border-slate-200 hover:bg-slate-100 transition">
+                    <button onclick="window.verDetallesProducto('${prod.id}')" class="bg-slate-50 text-primary font-bold py-2 rounded-lg text-sm border border-slate-200 hover:bg-slate-100 transition flex items-center justify-center gap-1">
+                        <span class="material-symbols-outlined text-base">visibility</span>
                         Ver detalles
                     </button>
                 </div>
