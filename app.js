@@ -2679,8 +2679,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                 misComprasLista.insertAdjacentHTML('beforeend', html);
             });
         } catch (error) {
+            const msg = String(error && (error.message || error.code) || error);
             console.error('Error cargando mis compras:', error);
-            mostrarNotificacion('Error al cargar compras', 'error');
+            if (msg.toLowerCase().includes('permission_denied') || msg.toLowerCase().includes('permission denied')) {
+                mostrarNotificacion('No autorizado para ver tus compras. Inicia sesión o revisa las reglas de Firebase.', 'warning');
+                // Abrir modal de acceso para que el usuario inicie sesión
+                abrirModalAccesoCliente();
+            } else {
+                mostrarNotificacion('Error al cargar compras', 'error');
+            }
         }
     }
 
@@ -3432,13 +3439,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 } else {
                     mostrarNotificacion('No se pudo activar premium', 'error');
                 }
-            } catch (_e) {
-                try {
-                    await activarPremiumLocalSinBackend();
-                    document.getElementById('modal-metodos-pago')?.classList.add('hidden');
-                } catch (_fallbackError) {
-                    mostrarNotificacion('Error al activar premium', 'error');
-                }
+            } catch (_fallbackError) {
+                console.error('Error al activar premium', _fallbackError);
+                mostrarNotificacion('Error al activar premium', 'error');
             }
         });
 
