@@ -3181,6 +3181,143 @@ document.addEventListener('DOMContentLoaded', async () => {
             cambiarPantalla('botiquin');
         });
 
+        // Footer legal links -> open modals without leaving the page
+        document.querySelectorAll('[data-modal]').forEach(el => {
+            el.addEventListener('click', (e) => {
+                e.preventDefault();
+                const key = String(el.dataset.modal || '').trim();
+                if (!key) return;
+                // Hide any other open legal modals first to avoid overlays intercepting clicks
+                document.querySelectorAll('.modal-legal').forEach(m => m.classList.add('hidden'));
+                const modalId = `modal-legal-${key}`;
+                const modal = document.getElementById(modalId);
+                if (!modal) return;
+                modal.classList.remove('hidden');
+                // focus first focusable element for accessibility
+                const focusable = modal.querySelector('button, a, [tabindex]:not([tabindex="-1"])');
+                if (focusable) focusable.focus();
+            });
+        });
+
+        // Close buttons inside legal modals
+        document.querySelectorAll('.modal-legal [data-close]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const modal = btn.closest('.modal-legal');
+                if (modal) modal.classList.add('hidden');
+            });
+        });
+
+        // Close modal when clicking on backdrop
+        document.querySelectorAll('.modal-legal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) modal.classList.add('hidden');
+            });
+        });
+
+        const buildPrintContent = (modalId) => {
+            const sourceModal = document.getElementById(`modal-legal-${modalId}`);
+            if (!sourceModal) return null;
+            const sourceBody = sourceModal.querySelector('.p-4:nth-of-type(2)') || sourceModal.querySelector('.p-4');
+            if (!sourceBody) return null;
+            const headings = Array.from(sourceBody.querySelectorAll('h3, h4, h5'))
+                .map((heading, index) => ({
+                    text: heading.textContent.trim(),
+                    level: heading.tagName.toLowerCase(),
+                    number: index + 1,
+                }))
+                .filter(item => item.text.length > 0);
+
+            const indexItems = headings.length
+                ? headings.map(item => `<li class="toc-item toc-${item.level}">${item.text}</li>`).join('')
+                : '<li class="toc-item">Contenido principal</li>';
+
+            return {
+                content: sourceBody.innerHTML,
+                indexItems,
+            };
+        };
+
+        document.querySelectorAll('[data-print-modal]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const modalId = String(btn.dataset.printModal || '').trim();
+                const printData = buildPrintContent(modalId);
+                if (!printData) return;
+                const { content, indexItems } = printData;
+
+                const printableWindow = window.open('', '_blank', 'width=1024,height=768');
+                if (!printableWindow) return;
+
+                const titleMap = {
+                    proteccion: 'Protección de Datos Personales',
+                    farmacovigilancia: 'Manual de Farmacovigilancia',
+                    normatividad: 'Normatividad Farmacéutica',
+                    terminos: 'Términos y Condiciones',
+                    privacidad: 'Políticas de Privacidad',
+                    derechos: 'Derechos de Autor',
+                    mapa: 'Mapa del Sitio',
+                };
+                const printTitle = titleMap[modalId] || 'Documento para imprimir';
+
+                printableWindow.document.open();
+                printableWindow.document.write(`
+                    <!doctype html>
+                    <html lang="es">
+                    <head>
+                        <meta charset="utf-8" />
+                        <meta name="viewport" content="width=device-width, initial-scale=1" />
+                        <title>${printTitle}</title>
+                        <style>
+                            @page { size: auto; margin: 18mm; }
+                            body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #fff; color: #000; }
+                            .print-sheet { padding: 0; max-width: 900px; margin: 0 auto; }
+                            .print-cover { min-height: 220px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; border-bottom: 2px solid #1e6fb8; padding: 24px 16px 28px; }
+                            .print-cover .eyebrow { color: #1e6fb8; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+                            .print-cover h1 { color: #1e6fb8; margin: 10px 0 8px; font-size: 24px; }
+                            .print-cover .subtitle { color: #000; font-size: 15px; max-width: 720px; line-height: 1.5; }
+                            .print-meta { margin-top: 16px; font-size: 12px; color: #475569; }
+                            .print-toc { page-break-before: always; border: 1px solid #dbeafe; border-radius: 10px; padding: 18px 20px; margin: 0 0 20px; }
+                            .print-toc h2 { color: #1e6fb8; margin: 0 0 12px; text-align: center; }
+                            .print-toc ul { margin: 0; padding-left: 1.2rem; }
+                            .print-toc li { margin: 0 0 8px; }
+                            .print-toc .toc-h4 { margin-left: 12px; }
+                            .print-toc .toc-h5 { margin-left: 24px; }
+                            .print-section { page-break-before: always; }
+                            .print-sheet h1 { color: #1e6fb8; text-align: center; margin: 6px 0 4px; font-size: 22px; }
+                            .print-sheet h2, .print-sheet h3, .print-sheet h4, .print-sheet h5 { color: #1e6fb8; text-align: left; margin: 18px 0 8px; }
+                            .print-sheet p, .print-sheet li { color: #000; line-height: 1.55; font-size: 15px; }
+                            .print-sheet ul, .print-sheet ol { padding-left: 1.2rem; margin-top: 6px; }
+                            .print-sheet a { color: #000; text-decoration: none; }
+                            .print-sheet hr { border: none; border-top: 1px solid #e5e7eb; margin: 16px 0; }
+                            .print-sheet .muted { color: #475569; font-size: 13px; text-align: center; margin: 0; }
+                            .print-block { page-break-inside: avoid; }
+                        </style>
+                    </head>
+                    <body>
+                        <main class="print-sheet">
+                            <section class="print-cover">
+                                <div class="eyebrow">VITEL - Documento institucional</div>
+                                <h1>${printTitle}</h1>
+                                <p class="subtitle">Versión preparada para impresión o exportación a PDF, con estructura formal para consulta interna, archivo físico o entrega institucional.</p>
+                                <p class="print-meta">Generado automáticamente desde el sistema legal de la plataforma.</p>
+                            </section>
+                            <section class="print-toc print-block">
+                                <h2>Índice</h2>
+                                <ul>${indexItems}</ul>
+                            </section>
+                            <section class="print-section">
+                                ${content}
+                            </section>
+                        </main>
+                    </body>
+                    </html>
+                `);
+                printableWindow.document.close();
+                printableWindow.focus();
+                setTimeout(() => printableWindow.print(), 250);
+            });
+        });
+
         document.getElementById('ver-carrito-btn')?.addEventListener('click', () => mostrarCarrito());
         document.getElementById('cerrar-carrito')?.addEventListener('click', () => {
             document.getElementById('modal-carrito')?.classList.add('hidden');

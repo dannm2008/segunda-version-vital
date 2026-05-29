@@ -837,7 +837,8 @@
                     </div>
                 </div>
             </div>
-
+ 
+                        
             <div id="modal-pedido" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
                 <div class="bg-white rounded-2xl max-w-md w-full p-6 text-center">
                     <span class="material-symbols-outlined text-6xl text-green-500 mb-4">check_circle</span>
@@ -1053,26 +1054,28 @@
 
         <!-- Enlaces Legales Principales (Ajustados para que no se amontonen) -->
         <div class="flex flex-wrap justify-center items-center gap-x-3 gap-y-3 text-center text-[10px] sm:text-xs font-bold uppercase tracking-tight text-blue-700">
-            <a href="#" class="hover:text-blue-900 whitespace-nowrap">Protección de Datos Personales (Ley 1581)</a>
+            <a href="#" data-modal="proteccion" class="hover:text-blue-900 whitespace-nowrap">Protección de Datos Personales (Ley 1581)</a>
             <span class="text-gray-300 hidden sm:inline">|</span>
-            <a href="#" class="hover:text-blue-900 whitespace-nowrap">Términos y Condiciones</a>
+            <a href="#" data-modal="terminos" class="hover:text-blue-900 whitespace-nowrap">Términos y Condiciones</a>
             <span class="text-gray-300 hidden sm:inline">|</span>
-            <a href="#" class="hover:text-blue-900 whitespace-nowrap">Políticas de Privacidad</a>
+            <a href="#" data-modal="privacidad" class="hover:text-blue-900 whitespace-nowrap">Políticas de Privacidad</a>
             <span class="text-gray-300 hidden sm:inline">|</span>
-            <a href="#" class="hover:text-blue-900 whitespace-nowrap">Derechos de Autor</a>
+            <a href="#" data-modal="derechos" class="hover:text-blue-900 whitespace-nowrap">Derechos de Autor</a>
             <span class="text-gray-300 hidden sm:inline">|</span>
-            <a href="#" class="hover:text-blue-900 whitespace-nowrap">Mapa de Sitio</a>
+            <a href="#" data-modal="componentes" class="hover:text-blue-900 whitespace-nowrap">COMPONENTES LEGALES DEL SITIO WEB</a>
+            <span class="text-gray-300 hidden sm:inline">|</span>
+            <!-- Mapa de Sitio integrado en Normatividad -->
         </div>
 
         <hr class="border-gray-100 my-6">
 
         <!-- Enlaces Secundarios de Salud -->
         <div class="flex flex-wrap justify-center gap-x-4 gap-y-2 text-[11px] sm:text-sm text-blue-700 font-medium text-center">
-            <a href="#" class="hover:underline">Normatividad Farmacéutica</a>
+            <a href="#" data-modal="normatividad" class="hover:underline">Normatividad Farmacéutica</a>
             <span class="text-gray-300 hidden sm:inline">|</span>
-            <a href="#" class="hover:underline">Manual de Farmacovigilancia</a>
+            <a href="#" data-modal="farmacovigilancia" class="hover:underline">Manual de Farmacovigilancia</a>
             <span class="text-gray-300 hidden sm:inline">|</span>
-            <a href="#" class="hover:underline">Canales de Atención al Vecino (PQRS)</a>
+            <a href="#" data-modal="pqrs" class="hover:underline">Canales de Atención al Vecino (PQRS)</a>
         </div>
     </div>
 </footer>
@@ -1242,11 +1245,238 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 <script src="https://checkout.wompi.co/widget.js"></script>
 <script src="app.js?v=20260403-06"></script>
+<script>
+document.addEventListener('click', function(e){
+    if(e.target && e.target.id && e.target.id.endsWith('-toggle')){
+        const targetId = e.target.id.replace(/-toggle$/, '-details');
+        const details = document.getElementById(targetId);
+        if(!details) return;
+        details.classList.toggle('hidden');
+        e.target.textContent = details.classList.contains('hidden') ? 'Mostrar detalles' : 'Ocultar detalles';
+    }
+});
+</script>
+<!-- Legal modals (moved into index, opened from footer) -->
+<div id="modal-legal-proteccion" class="hidden fixed inset-0 bg-black/50 z-[90] flex items-center justify-center p-4 modal-legal">
+    <div class="bg-white rounded-2xl max-w-3xl w-full shadow-2xl overflow-auto" style="max-height:80vh;">
+        <div class="p-4 flex items-center justify-between border-b">
+            <h2 class="text-lg font-bold">Protección de Datos Personales (Ley 1581)</h2>
+            <button data-close class="text-slate-600 font-bold px-3 py-1 rounded hover:bg-slate-100">Cerrar</button>
+        </div>
+        <div class="p-4">
+            <div class="flex flex-col items-center gap-2">
+                <a href="https://www.funcionpublica.gov.co/eva/gestornormativo/norma_pdf.php?i=49981" target="_blank" rel="noreferrer" class="block text-center font-bold" style="color:#0b66b2;">Abrir PDF en nueva pestaña</a>
+                <button id="proteccion-toggle" class="mt-2 bg-slate-100 text-slate-700 px-3 py-1 rounded hover:bg-slate-200">Mostrar detalles</button>
+            </div>
+            <div id="proteccion-details" class="hidden mt-4 prose max-w-none text-sm">
+                <p>Esta ley desarrolla el derecho constitucional de <strong>Habeas Data</strong>. Es de obligatorio cumplimiento para cualquier persona o empresa que maneje datos de clientes, empleados o proveedores.</p>
 
-</body>
-</html>
+                <h3>1. Conceptos Clave</h3>
+                <ul>
+                    <li><strong>Dato Personal:</strong> Cualquier información vinculada a una persona (nombre, cédula, foto).</li>
+                    <li><strong>Dato Sensible:</strong> Información que afecta la intimidad o genera discriminación (estado de salud, orientación sexual, huellas dactilares, convicciones religiosas). <strong>En farmacias, el historial de medicamentos es un dato sensible.</strong></li>
+                    <li><strong>Titular:</strong> La persona dueña de los datos.</li>
+                    <li><strong>Responsable del Tratamiento:</strong> La empresa que decide qué hacer con los datos.</li>
+                </ul>
 
-<!-- Accessibility widget (floating) -->
+                <h3>2. Obligaciones Principales</h3>
+                <ul>
+                    <li><strong>Autorización Previa:</strong> Antes de capturar un dato, el usuario debe firmar o dar clic en un "Acepto" donde se le explique para qué se usará su información.</li>
+                    <li><strong>Finalidad:</strong> No puedes usar el número de un cliente que compró un pañal para llamarlo a venderle un seguro de vida, a menos que él lo haya autorizado explícitamente.</li>
+                    <li><strong>RNBD (Registro Nacional de Bases de Datos):</strong> Las empresas con activos superiores a cierto monto deben inscribir sus bases de datos ante la SIC.</li>
+                </ul>
+
+                <h3>3. Derechos del Usuario (Derechos ARCO)</h3>
+                <p>El usuario tiene derecho a:</p>
+                <ul>
+                    <li><strong>A</strong>cceder a sus datos.</li>
+                    <li><strong>R</strong>ectificar información parcial o inexacta.</li>
+                    <li><strong>C</strong>ancelar/Suprimir sus datos de la base.</li>
+                    <li><strong>O</strong>ponerse al uso de sus datos para fines de marketing.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="modal-legal-farmacovigilancia" class="hidden fixed inset-0 bg-black/50 z-[90] flex items-center justify-center p-4 modal-legal">
+    <div class="bg-white rounded-2xl max-w-3xl w-full shadow-2xl overflow-auto" style="max-height:80vh;">
+        <div class="p-4 flex items-center justify-between border-b">
+            <h2 class="text-lg font-bold">Manual de Farmacovigilancia</h2>
+            <button data-close class="text-slate-600 font-bold px-3 py-1 rounded hover:bg-slate-100">Cerrar</button>
+        </div>
+        <div class="p-4">
+            <div class="flex flex-col items-center gap-2">
+                <a href="https://www.invima.gov.co/productos-vigilados/medicamentos-y-productos-biologicos/servicios-en-linea-farmacovigilancia" target="_blank" rel="noreferrer" class="block text-center font-bold" style="color:#0b66b2;">Abrir PDF en nueva pestaña</a>
+                <button id="farmacovigilancia-toggle" class="mt-2 bg-slate-100 text-slate-700 px-3 py-1 rounded hover:bg-slate-200">Mostrar detalles</button>
+            </div>
+            <div id="farmacovigilancia-details" class="hidden mt-4 prose max-w-none text-sm">
+                <p>Es el sistema de control para vigilar la seguridad de los medicamentos después de que salen al mercado.</p>
+
+                <h3>1. Marco Legal: Resolución 1403 de 2007</h3>
+                <p>Establece que todo servicio farmacéutico debe tener un programa de farmacovigilancia.</p>
+
+                <h3>2. ¿Qué debe contener el Manual?</h3>
+                <ol>
+                    <li><strong>Objetivo:</strong> Detectar, evaluar y prevenir eventos adversos.</li>
+                    <li><strong>Procedimiento de Detección:</strong> Cómo el personal identifica una reacción adversa (RAM) o un problema relacionado con medicamentos (PRM).</li>
+                    <li><strong>Formato de Reporte:</strong> Uso del formato <strong>FORAM</strong> (Formulario de Reporte de Eventos Adversos a Medicamentos).</li>
+                    <li><strong>Flujo de Información:</strong>
+                        <ul>
+                            <li><strong>Eventos Graves:</strong> Se reportan dentro de las <strong>72 horas</strong> siguientes a su aparición.</li>
+                            <li><strong>Eventos No Graves:</strong> Se reportan de forma consolidada mensualmente (primeros 5-10 días del mes).</li>
+                        </ul>
+                    </li>
+                    <li><strong>Responsable:</strong> El Director Técnico (Regente o Químico) es quien firma y gestiona los reportes ante el INVIMA o el ente territorial.</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="modal-legal-normatividad" class="hidden fixed inset-0 bg-black/50 z-[90] flex items-center justify-center p-4 modal-legal">
+    <div class="bg-white rounded-2xl max-w-3xl w-full shadow-2xl overflow-auto" style="max-height:80vh;">
+        <div class="p-4 flex items-center justify-between border-b">
+            <h2 class="text-lg font-bold">Normatividad Farmacéutica</h2>
+            <button data-close class="text-slate-600 font-bold px-3 py-1 rounded hover:bg-slate-100">Cerrar</button>
+        </div>
+        <div class="p-4">
+            <div class="flex flex-col items-center gap-2" aria-hidden="true"></div>
+            <div id="normatividad-details" class="mt-4 prose max-w-none text-sm">
+                <h3>III. NORMATIVIDAD FARMACÉUTICA (Colombia)</h3>
+                <p><strong>Es el "corazón" regulatorio para que una farmacia o droguería pueda operar legalmente.</strong></p>
+
+                <h4>1. Decreto 780 de 2016 (Capítulo de Drogas)</h4>
+                <p>Es el Decreto Único Reglamentario del Sector Salud. Define:</p>
+                <ul>
+                    <li><strong>Servicio Farmacéutico:</strong> El servicio de atención en salud responsable de las actividades relacionadas con medicamentos.</li>
+                    <li><strong>Procesos Obligatorios:</strong> Selección, adquisición, recepción, almacenamiento, distribución y dispensación.</li>
+                </ul>
+
+                <h4>2. Resolución 1403 de 2007</h4>
+                <p>Es el manual de condiciones esenciales. Define:</p>
+                <ul>
+                    <li><strong>Infraestructura:</strong> Pisos de fácil limpieza, paredes impermeables, estantería organizada, área de inyectología independiente.</li>
+                    <li><strong>Dotación:</strong> Termohigrómetros para medir temperatura (15°C - 30°C) y humedad (60% - 70%).</li>
+                    <li><strong>Gestión de Calidad:</strong> Obligación de tener manuales de procesos escritos.</li>
+                </ul>
+
+                <h4>3. Resolución 3100 de 2019</h4>
+                <p>Define las condiciones de habilitación de servicios de salud (si la farmacia presta servicios adicionales como toma de muestras o curaciones).</p>
+
+                <hr>
+                <p>Para ver los <strong>Componentes Legales del Sitio Web</strong> (Términos, Privacidad, Derechos y Sitemap), <a href="#" data-modal="componentes" class="underline">ábrelo aquí</a>.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="modal-legal-componentes" class="hidden fixed inset-0 bg-black/50 z-[90] flex items-center justify-center p-4 modal-legal">
+    <div class="bg-white rounded-2xl max-w-3xl w-full shadow-2xl overflow-auto" style="max-height:80vh;">
+        <div class="p-4 flex items-center justify-between border-b">
+            <h2 class="text-lg font-bold">Componentes Legales del Sitio Web</h2>
+            <button data-close class="text-slate-600 font-bold px-3 py-1 rounded hover:bg-slate-100">Cerrar</button>
+        </div>
+        <div class="p-4">
+            <div class="flex flex-col items-center gap-2" aria-hidden="true"></div>
+            <div id="componentes-details" class="mt-4 prose max-w-none text-sm">
+
+                <h4>1. Términos y Condiciones (T&C)</h4>
+                <p>Es el "contrato de adhesión". Debe incluir:</p>
+                <ul>
+                    <li><strong>Precios y Pagos:</strong>  Incluye IVA y costos de envío.</li>
+                    <li><strong>Garantías:</strong> Cómo se tramitan según la Ley 1480 (Estatuto del Consumidor).</li>
+                    <li><strong>Derecho de Retracto:</strong> El cliente tiene 5 días hábiles para devolver un producto comprado por internet (ojo: los medicamentos tienen excepciones por ser bienes de uso personal/salud).</li>
+                    <li><strong>Limitación de Responsabilidad:</strong> "No nos hacemos responsables por el mal uso de los medicamentos sin fórmula médica".</li>
+                </ul>
+
+                <h4>2. Políticas de Privacidad</h4>
+                <p>Es la aplicación de la Ley 1581 en tu web. Debe decir:</p>
+                <ul>
+                    <li>Quién es el oficial de privacidad.</li>
+                    <li>El correo electrónico donde el usuario puede pedir que lo borren.</li>
+                    <li>Cuánto tiempo guardas los datos.</li>
+                    <li>Uso de <strong>Cookies</strong> (rastreo de navegación).</li>
+                </ul>
+
+                <h4>3. Derechos de Autor (Copyright)</h4>
+                <p>Protección de la propiedad intelectual según la <strong>Ley 23 de 1982</strong>.</p>
+                <ul>
+                    <li>Prohibición de copiar textos, logos, fotos de productos o el código fuente del sitio.</li>
+                    <li>Advertencia de que el uso no autorizado dará lugar a acciones legales.</li>
+                </ul>
+
+                <h4>4. Mapa del Sitio (Sitemap)</h4>
+                <p><strong>Desde lo técnico (SEO):</strong> Un <em>sitemap.xml</em> es un archivo que lista las URLs públicas del sitio y ayuda a los motores de búsqueda (Google, Bing) a indexar correctamente las páginas. Incluye prioridad y la última fecha de actualización cuando es posible.</p>
+                <p><strong>Desde la experiencia de usuario (UX):</strong> El mapa del sitio en HTML es una página jerárquica que muestra la estructura del sitio para que usuarios y administradores vean las secciones principales (Inicio, Productos, Categorías, Contacto, Legales) de un solo vistazo. Sirve como herramienta de navegación y control de contenido.</p>
+
+                <hr>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="modal-legal-terminos" class="hidden fixed inset-0 bg-black/50 z-[90] flex items-center justify-center p-4 modal-legal">
+    <div class="bg-white rounded-2xl max-w-3xl w-full shadow-2xl overflow-auto" style="max-height:80vh;">
+        <div class="p-4 flex items-center justify-between border-b">
+            <h2 class="text-lg font-bold">Términos y Condiciones</h2>
+            <button data-close class="text-slate-600 font-bold px-3 py-1 rounded hover:bg-slate-100">Cerrar</button>
+        </div>
+        <div class="p-4">
+            <p>Define las reglas de uso entre el sitio y el usuario: permisos, prohibiciones, responsabilidades por errores en precios, políticas de devoluciones y garantías.</p>
+            <p>Es recomendable que cada negocio redacte sus propios términos con asesoría legal para adaptarlos a su modelo de negocio.</p>
+        </div>
+    </div>
+</div>
+
+<div id="modal-legal-privacidad" class="hidden fixed inset-0 bg-black/50 z-[90] flex items-center justify-center p-4 modal-legal">
+    <div class="bg-white rounded-2xl max-w-3xl w-full shadow-2xl overflow-auto" style="max-height:80vh;">
+        <div class="p-4 flex items-center justify-between border-b">
+            <h2 class="text-lg font-bold">Políticas de Privacidad</h2>
+            <button data-close class="text-slate-600 font-bold px-3 py-1 rounded hover:bg-slate-100">Cerrar</button>
+        </div>
+        <div class="p-4">
+            <p>Aplicación práctica de la Ley 1581: identifica quién es el responsable de los datos, qué datos se recolectan, finalidad, tiempo de conservación y canales para ejercer derechos (acceso, rectificación, supresión).</p>
+            <p>Incluya mecanismo de autorización, tratamiento y contacto del responsable o delegado de datos.</p>
+        </div>
+    </div>
+</div>
+
+<div id="modal-legal-derechos" class="hidden fixed inset-0 bg-black/50 z-[90] flex items-center justify-center p-4 modal-legal">
+    <div class="bg-white rounded-2xl max-w-3xl w-full shadow-2xl overflow-auto" style="max-height:80vh;">
+        <div class="p-4 flex items-center justify-between border-b">
+            <h2 class="text-lg font-bold">Derechos de Autor</h2>
+            <button data-close class="text-slate-600 font-bold px-3 py-1 rounded hover:bg-slate-100">Cerrar</button>
+        </div>
+        <div class="p-4">
+            <p>Todo el contenido (textos, logos, fotos, software) está protegido por leyes de propiedad intelectual. En Colombia, Ley 23 de 1982 regula el derecho de autor.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Mapa del Sitio integrado en Normatividad; modal separado eliminado -->
+
+<div id="modal-legal-pqrs" class="hidden fixed inset-0 bg-black/50 z-[90] flex items-center justify-center p-4 modal-legal">
+    <div class="bg-white rounded-2xl max-w-3xl w-full shadow-2xl overflow-auto" style="max-height:80vh;">
+        <div class="p-4 flex items-center justify-between border-b">
+            <h2 class="text-lg font-bold">Canales de Atención al Vecino (PQRS)</h2>
+            <button data-close class="text-slate-600 font-bold px-3 py-1 rounded hover:bg-slate-100">Cerrar</button>
+        </div>
+        <div class="p-4">
+            <p>Las PQRS son el canal para Peticiones, Quejas, Reclamos y Sugerencias de los usuarios. Este espacio permite que la comunidad reporte novedades, solicite información o eleve inconformidades sobre la atención o el servicio.</p>
+            <h3>Qué debe incluir un canal PQRS</h3>
+            <ul>
+                <li><strong>Medio de contacto:</strong> formulario, correo, teléfono o ventanilla física.</li>
+                <li><strong>Datos mínimos:</strong> nombre, identificación, correo o teléfono y descripción del caso.</li>
+                <li><strong>Tiempos de respuesta:</strong> deben estar visibles para el usuario.</li>
+                <li><strong>Seguimiento:</strong> un número de radicado o confirmación de recibido.</li>
+            </ul>
+            <p>Si quieres, también puedo dejar este canal conectado a un formulario real para que el usuario envíe la PQRS desde la página.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Accessibility widget (floating) - moved inside body to avoid HTML parse errors -->
 <div id="accessibility-widget" aria-hidden="false">
     <button id="access-btn" aria-label="Opciones de accesibilidad" title="Accesibilidad">
         <!-- If you want to use your mascot image, place it at assets/ui/accessibility-mascot.png -->
@@ -1270,3 +1500,6 @@
         </div>
     </div>
 </div>
+
+</body>
+</html>

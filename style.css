@@ -259,11 +259,148 @@ a:focus-visible {
     }
 }
 
+/* Reduce large vertical spacing from Tailwind utility 'pb-24' on site sections
+   to keep pages compact while preserving some breathing room. */
+.section.pb-24 {
+    padding-bottom: 1rem !important; /* ~16px */
+    margin-bottom: 0 !important;
+}
+
+/* Optional small top padding so content doesn't stick to header */
+.section { padding-top: 0.5rem; }
+
 /* ✅ DARK MODE SUPPORT (opcional) */
 @media (prefers-color-scheme: dark) {
     body {
         background-color: #1a1a1a;
         color: #fff;
     }
+}
+
+/* Modal legal: títulos en azul pastel y texto más legible */
+.modal-legal .p-4 h2,
+.modal-legal .p-4 h3 {
+    color: #1e6fb8; /* azul profesional */
+    font-weight: 800;
+    font-size: 1.125rem;
+    text-align: center; /* títulos centrados */
+}
+.modal-legal .p-4 h4,
+.modal-legal .p-4 h5 {
+    color: #1e6fb8;
+    font-weight: 800;
+    text-align: center;
+    margin-top: 1rem;
+}
+.modal-legal .p-4 p {
+    color: #000000; /* texto negro */
+    line-height: 1.6;
+    font-size: 15px;
+    text-align: center; /* párrafos centrados según solicitud */
+}
+.modal-legal .p-4 ul,
+.modal-legal .p-4 ol {
+    color: #000000;
+    line-height: 1.6;
+    font-size: 15px;
+    text-align: left; /* listas alineadas a la izquierda para legibilidad */
+    margin-left: 1rem; padding-left: 1rem;
+}
+.modal-legal .p-4 li { margin-bottom: 0.5rem; }
+.modal-legal button[data-close] {
+    background: transparent;
+    border: 1px solid rgba(15,23,42,0.06);
+    padding: 6px 10px;
+    border-radius: 8px;
+}
+.modal-print-btn {
+    border: 1px solid rgba(30, 111, 184, 0.18);
+    background: #eff6ff;
+}
+.modal-print-btn:hover {
+    background: #dbeafe;
+}
+
+/* Improve modal container contrast and spacing */
+.modal-legal > div {
+    padding-bottom: 18px;
+}
+
+/* Responsive PDF embed */
+.modal-legal iframe { display:block; width:100%; height:100%; }
+
+/* ==========================
+   Button & Icon Spacing
+   Global rules to keep button text and icons aligned and evenly spaced
+   ========================== */
+button,
+button[class*="btn"],
+a[class*="btn"],
+.icon-btn,
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem; /* espacio entre icono y texto */
+    padding: 0.55rem 0.9rem;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.material-symbols-outlined {
+    vertical-align: middle;
+    margin-right: 0; /* controlado por el gap en el contenedor */
+}
+
+button .material-symbols-outlined,
+.icon-btn .material-symbols-outlined,
+.btn .material-symbols-outlined {
+    margin-right: 0.45rem; /* pequeño espacio extra para consistencia visual */
+    font-size: 1.05em;
+}
+
+/* Footer / contentinfo links styled as compact buttons for legibility */
+contentinfo a,
+.legal-footer a,
+footer a,
+.contentinfo a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 6px 8px;
+    font-weight: 700; /* enlaces del footer en negrita */
+}
+
+/* Print/PDF clean view */
+@media print {
+    body * { visibility: hidden !important; }
+    .print-sheet, .print-sheet * { visibility: visible !important; }
+    .print-sheet {
+        position: absolute !important;
+        left: 0;
+        top: 0;
+        width: 100%;
+        background: #fff;
+        color: #000;
+        padding: 24px;
+        font-family: Arial, Helvetica, sans-serif;
+    }
+    .print-sheet h1,
+    .print-sheet h2,
+    .print-sheet h3,
+    .print-sheet h4,
+    .print-sheet h5 {
+        color: #1e6fb8;
+        text-align: center;
+    }
+    .print-sheet p,
+    .print-sheet li {
+        color: #000;
+        line-height: 1.5;
+        text-align: left;
+    }
+    .print-sheet a { color: #000; text-decoration: none; }
 }
 
