@@ -1079,13 +1079,25 @@
         </div>
     </div>
 </footer>
-    <!-- BARRA DE NAVEGACIÓN -->
-    <nav class="fixed bottom-0 left-0 right-0 flex border-t border-slate-200 bg-white/95 backdrop-blur-md px-4 pb-4 pt-2 z-50">
-        <a href="#" id="nav-btn-home" class="nav-btn flex flex-1 flex-col items-center justify-center gap-0.5 text-primary" data-target="home"><span class="material-symbols-outlined text-2xl">home</span><p class="text-xs font-bold">Inicio</p></a>
-        <a href="#" id="nav-btn-botiquin" class="nav-btn flex flex-1 flex-col items-center justify-center gap-0.5 text-slate-400" data-target="botiquin"><span class="material-symbols-outlined text-2xl">inventory_2</span><p class="text-xs font-medium">Botiquín</p></a>
-        <a href="#" id="nav-btn-mapa" class="nav-btn flex flex-1 flex-col items-center justify-center gap-0.5 text-slate-400" data-target="mapa"><span class="material-symbols-outlined text-2xl">box</span><p class="text-xs font-medium">Compras</p></a>
-        <a href="#" id="nav-btn-panel" class="nav-btn hidden flex flex-1 flex-col items-center justify-center gap-0.5 text-slate-400" data-target="panel"><span id="panel-nav-icon" class="material-symbols-outlined text-2xl">admin_panel_settings</span><p id="panel-nav-label" class="text-xs font-medium">Panel</p></a>
-    </nav>
+    <!-- BARRA DE NAVEGACIÓN MÁS PEQUEÑA -->
+<nav class="fixed bottom-0 left-0 right-0 flex border-t border-slate-200 bg-white/95 backdrop-blur-md px-4 pb-1 pt-1 z-50">
+    <a href="#" id="nav-btn-home" class="nav-btn flex flex-1 flex-col items-center justify-center gap-0 text-primary py-1" data-target="home">
+        <span class="material-symbols-outlined text-xl">home</span>
+        <p class="text-[10px] font-bold">Inicio</p>
+    </a>
+    <a href="#" id="nav-btn-botiquin" class="nav-btn flex flex-1 flex-col items-center justify-center gap-0 text-slate-400 py-1" data-target="botiquin">
+        <span class="material-symbols-outlined text-xl">inventory_2</span>
+        <p class="text-[10px] font-medium">Botiquín</p>
+    </a>
+    <a href="#" id="nav-btn-mapa" class="nav-btn flex flex-1 flex-col items-center justify-center gap-0 text-slate-400 py-1" data-target="mapa">
+        <span class="material-symbols-outlined text-xl">box</span>
+        <p class="text-[10px] font-medium">Compras</p>
+    </a>
+    <a href="#" id="nav-btn-panel" class="nav-btn hidden flex flex-1 flex-col items-center justify-center gap-0 text-slate-400 py-1" data-target="panel">
+        <span id="panel-nav-icon" class="material-symbols-outlined text-xl">admin_panel_settings</span>
+        <p id="panel-nav-label" class="text-[10px] font-medium">Panel</p>
+    </a>
+</nav>
 </div>
 
 <!-- MODAL ACCESO CLIENTE -->

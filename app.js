@@ -339,6 +339,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function sincronizarSeguimientoPedidoActual() {
         if (!firebaseInicializado || !database || !clienteSesion?.uid) {
+            // Intentar cargar seguimiento desde localStorage como fallback
+            try {
+                const stored = localStorage.getItem(PEDIDO_SEGUIMIENTO_KEY);
+                if (stored) {
+                    const parsed = JSON.parse(stored);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        pedidosActivosMultiples = parsed;
+                        seguimientoPedidoActual = pedidosActivosMultiples[0] || null;
+                        revisarPedidosEntregadosParaNotificar();
+                        return;
+                    }
+                }
+            } catch (err) {
+                // ignore
+            }
+
             seguimientoPedidoActual = null;
             pedidosActivosMultiples = [];
             return;
@@ -396,6 +412,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function guardarSesionCliente(sesion) {
         clienteSesion = sesion;
+        try {
+            localStorage.setItem('clienteSesion', JSON.stringify(sesion));
+        } catch (e) {
+            // ignore storage errors
+        }
         cargarNotificacionesPersistidas();
         cargarEntregadosNotificados();
         actualizarEstadoSesionClienteUI();
@@ -818,45 +839,51 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     async function guardarSeguimientoPedido(data) {
-        seguimientoPedidoActual = data;
+        // Siempre mantener el pedido en memoria para que la UI lo muestre inmediatamente
+        const codigoSeguro = String(data?.codigo || '').trim() || `VM-${Date.now()}`;
 
-        if (!firebaseInicializado || !database) {
+        const totalFinal = Number(data?.total || 0);
+        const itemsCantidad = Array.isArray(data?.items)
+            ? data.items.reduce((acc, item) => acc + Math.max(1, Number(item?.cantidad) || 0), 0)
+            : 0;
+
+        const pedidoPayload = {
+            ...data,
+            codigo: codigoSeguro,
+            creadoIso: data?.creadoIso || new Date().toISOString(),
+            totalFinal,
+            itemsCantidad,
+            estado: obtenerEstadoPedido(data?.etaIso).texto.toLowerCase()
+        };
+
+        // Reflejar de inmediato en memoria para que seguimiento se actualice sin recargar.
+        const idx = pedidosActivosMultiples.findIndex((p) => String(p?.codigo || '') === codigoSeguro);
+        if (idx >= 0) {
+            pedidosActivosMultiples[idx] = { codigo: codigoSeguro, ...pedidoPayload };
+        } else {
+            pedidosActivosMultiples.push({ codigo: codigoSeguro, ...pedidoPayload });
+        }
+        pedidosActivosMultiples.sort((a, b) => {
+            const fechaB = new Date(b.creadoIso || b.creado_iso || b.creado_fecha || 0).getTime();
+            const fechaA = new Date(a.creadoIso || a.creado_iso || a.creado_fecha || 0).getTime();
+            return fechaB - fechaA;
+        });
+        seguimientoPedidoActual = pedidosActivosMultiples[0] || null;
+
+        // Guardar en localStorage como fallback para continuidad offline
+        try {
+            localStorage.setItem(PEDIDO_SEGUIMIENTO_KEY, JSON.stringify(pedidosActivosMultiples));
+        } catch (err) {
+            // Ignorar si el storage no está disponible
+        }
+
+        // Si Firebase está disponible y tenemos un uid, intentar persistir en server
+        if (!firebaseInicializado || !database || !clienteSesion?.uid) {
+            // No se puede escribir en Firebase; terminar aquí (UI ya actualizada)
             return;
         }
 
-        if (!clienteSesion?.uid) return;
-
-        const codigoSeguro = String(data?.codigo || '').trim() || `VM-${Date.now()}`;
-
         try {
-            // Guardar en pedidos activos (NO se sobrescribe, se crea una rama por código)
-            const totalFinal = Number(data?.total || 0);
-            const itemsCantidad = Array.isArray(data?.items)
-                ? data.items.reduce((acc, item) => acc + Math.max(1, Number(item?.cantidad) || 0), 0)
-                : 0;
-
-            const pedidoPayload = {
-                ...data,
-                creadoIso: data?.creadoIso || new Date().toISOString(),
-                totalFinal,
-                itemsCantidad,
-                estado: obtenerEstadoPedido(data?.etaIso).texto.toLowerCase()
-            };
-
-            // Reflejar de inmediato en memoria para que seguimiento se actualice sin recargar.
-            const idx = pedidosActivosMultiples.findIndex((p) => String(p?.codigo || '') === codigoSeguro);
-            if (idx >= 0) {
-                pedidosActivosMultiples[idx] = { codigo: codigoSeguro, ...pedidoPayload };
-            } else {
-                pedidosActivosMultiples.push({ codigo: codigoSeguro, ...pedidoPayload });
-            }
-            pedidosActivosMultiples.sort((a, b) => {
-                const fechaB = new Date(b.creadoIso || b.creado_iso || b.creado_fecha || 0).getTime();
-                const fechaA = new Date(a.creadoIso || a.creado_iso || a.creado_fecha || 0).getTime();
-                return fechaB - fechaA;
-            });
-            seguimientoPedidoActual = pedidosActivosMultiples[0] || null;
-
             // Guardar en PEDIDOS ACTIVOS con el código como rama (cada pedido es independiente)
             await database.ref(`seguimientoPedidosActivos/${clienteSesion.uid}/${codigoSeguro}`).set(pedidoPayload);
 
@@ -864,6 +891,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             await database.ref(`seguimientoPedido/${clienteSesion.uid}/${codigoSeguro}`).set(pedidoPayload);
         } catch (error) {
             console.warn('No se pudo guardar seguimiento en Firebase:', error?.message || error);
+            if (error && (error.code || /permission_denied/i.test(String(error.message || '')))) {
+                mostrarNotificacion('Seguimiento guardado localmente. Firebase rechazó la escritura (permiso denegado).', 'info');
+            }
         }
     }
 
@@ -3588,7 +3618,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         premiumActivo = true;
         premiumUntil = '2099-12-31T23:59:59Z';
     }
-    actualizarEstadoSesionClienteUI();
+    // Restaurar sesión de cliente desde localStorage si existe
+    try {
+        const storedSesion = localStorage.getItem('clienteSesion');
+        if (storedSesion) {
+            const parsed = JSON.parse(storedSesion);
+            if (parsed && parsed.email) {
+                // Aplicar de forma local; si Firebase Auth tiene un user, manejarCambioSesionCliente lo sustituirá
+                clienteSesion = parsed;
+                actualizarEstadoSesionClienteUI();
+            }
+        }
+    } catch (e) {
+        // ignore
+    }
     iniciarEscuchaSesionCliente();
     actualizarEstadoAccesoPanelUI();
     actualizarTarjetaSeguimiento();
